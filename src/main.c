@@ -12,12 +12,7 @@ int main( int argc, char *argv[] ) {
     uint numPuzzles = 1;
 
     for ( uint i = 0; i < 50; ++i ) {
-        count = puzzle_solveEdges( puzzle );
-        if ( !count ) {
-            printf( "Error\n" );
-            //puzzle_printLayout( puzzle );
-            ++numPuzzles;
-        }
+        puzzle_findValidSolutions( puzzle );
         puzzle_shuffle( puzzle );
     }
 
