@@ -33,7 +33,6 @@ typedef struct PuzzleSolution {
 
 typedef struct Puzzle {
     Piece pieces[25];
-    uint rotations[25];
     Piece* edgePieces[12];
     Piece* cornerPieces[4];
     Piece* centerPieces[9];
@@ -41,6 +40,14 @@ typedef struct Puzzle {
     char connections[40]; //vertical connections first, top to bottom, left to right
                           //negative is innie -> outie
     uint numUniqueConnectors; 
+
+    EdgeSolution* edgeSolutions;
+    uint numEdgeSolutions;
+    uint maxEdgeSolutions;
+
+    CenterSolution* centerSolutions;
+    uint numCenterSolutions;
+    uint maxCenterSolutions;
 } Puzzle;
 
 
@@ -48,5 +55,6 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle );
 void puzzle_shuffle( Puzzle* const puzzle );
 Puzzle* puzzle_create( const uint numUniqueConnectors );
 void puzzle_printLayout( const Puzzle* const puzzle );
+void puzzle_free( Puzzle* const puzzle );
 
 #endif
