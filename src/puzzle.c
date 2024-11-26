@@ -85,12 +85,12 @@ static bool charArrayContains( const char* const array, const uint arraySize,
 }
 
 static TripleIndex* puzzle_calculateValidEdges( const Puzzle* const puzzle,
-                                                   uint* const numSolutions ) {
+                                                uint* const numSolutions ) {
     //Right/Left refer to Right/Left of edge pieces
     char validLefts[4] = {0};
     char validRights[4] = {0};
     for ( uint i = 0; i < 4; ++i ) {
-        Piece* corner = puzzle->cornerPieces[i];
+        const Piece* corner = puzzle->cornerPieces[i];
         validLefts[i] = -piece_getSide( *corner, RIGHT );
         validRights[i] = -piece_getSide( *corner, LEFT );
     }
@@ -98,34 +98,34 @@ static TripleIndex* puzzle_calculateValidEdges( const Puzzle* const puzzle,
     char validTriples[1320][3];
     uint numValidTriples = 0;
     for ( uint i = 0; i < 12; ++i ) { //left
-        Piece* first = puzzle->edgePieces[i];
-        char firstLeft = piece_getSide( *first, LEFT );
+        const Piece* first = puzzle->edgePieces[i];
+        const char firstLeft = piece_getSide( *first, LEFT );
 
         if ( !charArrayContains( validLefts, 4, firstLeft ) ) {
             continue;
         }
 
-        char firstRight = piece_getSide( *first, RIGHT );
+        const char firstRight = piece_getSide( *first, RIGHT );
 
         for ( uint j = 0; j < 12; ++j ) {
-            Piece* second = puzzle->edgePieces[j];
-            char secondLeft = piece_getSide( *second, LEFT );
+            const Piece* second = puzzle->edgePieces[j];
+            const char secondLeft = piece_getSide( *second, LEFT );
 
             if ( j == i || secondLeft + firstRight != 0 ) {
                 continue;
             }
 
-            char secondRight = piece_getSide( *second, RIGHT );
+            const char secondRight = piece_getSide( *second, RIGHT );
 
             for ( uint k = 0; k < 12; ++k ) {
-                Piece* third = puzzle->edgePieces[k];
-                char thirdRight = piece_getSide( *third, RIGHT );
+                const Piece* third = puzzle->edgePieces[k];
+                const char thirdRight = piece_getSide( *third, RIGHT );
 
                 if ( !charArrayContains( validRights, 4, thirdRight ) ) {
                     continue; 
                 }
 
-                char thirdLeft = piece_getSide( *third, LEFT );
+                const char thirdLeft = piece_getSide( *third, LEFT );
 
                 if ( i == k || j == k || secondRight + thirdLeft != 0 ) {
                     continue;
@@ -153,28 +153,13 @@ static TripleIndex* puzzle_calculateValidEdges( const Puzzle* const puzzle,
     return solutions;
 }
 
-void puzzle_recEdgeSolve( const Puzzle* const puzzle, char edgeIndexes[4],
+static void puzzle_recEdgeSolve( const Puzzle* const puzzle, char edgeIndexes[4],
                           const char* const currentArrangement,
                           const TripleIndex* const edgeTriples, const uint numEdgeTriples,
                           const uint currentEdge, EdgeSolution* const edgeSolutions,
-                          uint *numEdgeSolutions ) {
-    if ( currentEdge == 4 ) {
-        //corners
-        for ( uint i = 0; i < 4; ++i ) {
-           edgeSolutions[*numEdgeSolutions].cornerIndexes[i] = currentArrangement[i]; 
-        }
-
-        for ( uint i = 0; i < 3; ++i ) {
-            edgeSolutions[*numEdgeSolutions].topEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[0]].indexes[i];
-            edgeSolutions[*numEdgeSolutions].rightEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[1]].indexes[i];   
-            edgeSolutions[*numEdgeSolutions].bottomEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[2]].indexes[2 - i];   
-            edgeSolutions[*numEdgeSolutions].leftEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[3]].indexes[2 - i];   
-        }
-        ++*numEdgeSolutions;
-        return;
-    }
-    char leftCorner = piece_getSide( puzzle->pieces[( int ) currentArrangement[( int ) currentEdge]], RIGHT );
-    char rightCorner = piece_getSide( puzzle->pieces[( int ) currentArrangement[( int  ) currentEdge + 1]], LEFT );
+                          uint* const numEdgeSolutions ) {
+    const char leftCorner = piece_getSide( puzzle->pieces[( int ) currentArrangement[( int ) currentEdge]], RIGHT );
+    const char rightCorner = piece_getSide( puzzle->pieces[( int ) currentArrangement[( int  ) currentEdge + 1]], LEFT );
 
     for ( int i = 0; i < numEdgeTriples; ++i ) {
         if ( charArrayContains( edgeIndexes, currentEdge, i ) ) {
@@ -188,7 +173,6 @@ void puzzle_recEdgeSolve( const Puzzle* const puzzle, char edgeIndexes[4],
                     valid = false; 
                     break;
                 }
-
             }
             if ( !valid ) {
                 break;
@@ -197,18 +181,31 @@ void puzzle_recEdgeSolve( const Puzzle* const puzzle, char edgeIndexes[4],
         if ( !valid ) {
             continue;
         }
-        char leftEdge = piece_getSide( puzzle->pieces[( int  ) edgeTriples[i].indexes[0]], LEFT );
+        const char leftEdge = piece_getSide( puzzle->pieces[( int  ) edgeTriples[i].indexes[0]], LEFT );
         if ( leftEdge + leftCorner != 0  ){
             continue;
         }
-        char rightEdge = piece_getSide( puzzle->pieces[( int ) edgeTriples[i].indexes[2]], RIGHT );
+        const char rightEdge = piece_getSide( puzzle->pieces[( int ) edgeTriples[i].indexes[2]], RIGHT );
         if ( rightEdge + rightCorner != 0 ) {
             continue;
         }
         edgeIndexes[currentEdge] = i;
-        puzzle_recEdgeSolve( puzzle, edgeIndexes, currentArrangement, 
-                             edgeTriples, numEdgeTriples, currentEdge + 1,
-                             edgeSolutions, numEdgeSolutions );
+        if ( currentEdge == 3 ) {
+            for ( uint i = 0; i < 4; ++i ) {
+                edgeSolutions[*numEdgeSolutions].cornerIndexes[i] = currentArrangement[i]; 
+                if ( i < 3 ) {
+                    edgeSolutions[*numEdgeSolutions].topEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[0]].indexes[i];
+                    edgeSolutions[*numEdgeSolutions].rightEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[1]].indexes[i];   
+                    edgeSolutions[*numEdgeSolutions].bottomEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[2]].indexes[2 - i];   
+                    edgeSolutions[*numEdgeSolutions].leftEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[3]].indexes[2 - i];   
+                }
+            }
+            ++*numEdgeSolutions;
+        } else {
+            puzzle_recEdgeSolve( puzzle, edgeIndexes, currentArrangement, 
+                                 edgeTriples, numEdgeTriples, currentEdge + 1,
+                                 edgeSolutions, numEdgeSolutions );
+        }
     }
 }
 
@@ -230,38 +227,38 @@ static TripleIndex* puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
     uint numValidTriples = 0;
 
     for ( uint i = 0; i < 36; ++i ) {
-        uint firstIndex = i / 4; 
-        uint firstRotation = i % 4;
-        Piece* firstPiece = puzzle->centerPieces[firstIndex];
-        char firstLeft = piece_getSideWithRotation( *firstPiece, LEFT, firstRotation );
+        const uint firstIndex = i / 4; 
+        const uint firstRotation = i % 4;
+        const Piece* firstPiece = puzzle->centerPieces[firstIndex];
+        const char firstLeft = piece_getSideWithRotation( *firstPiece, LEFT, firstRotation );
         if ( !charArrayContains( validLefts, 3, firstLeft ) ) {
             continue;
         }
-        char firstRight = piece_getSideWithRotation( *firstPiece, RIGHT, firstRotation );
+        const char firstRight = piece_getSideWithRotation( *firstPiece, RIGHT, firstRotation );
         for ( uint j = 0; j < 36; ++j ) {
-            uint secondIndex = j / 4; 
+            const uint secondIndex = j / 4; 
             if ( firstIndex == secondIndex ) {
                 continue;
             }
-            uint secondRotation = j % 4;
-            Piece* secondPiece = puzzle->centerPieces[secondIndex];
-            char secondLeft = piece_getSideWithRotation( *secondPiece, LEFT, secondRotation );
+            const uint secondRotation = j % 4;
+            const Piece* secondPiece = puzzle->centerPieces[secondIndex];
+            const char secondLeft = piece_getSideWithRotation( *secondPiece, LEFT, secondRotation );
             if ( firstRight + secondLeft != 0 ) {
                 continue;
             }
-            char secondRight = piece_getSideWithRotation( *secondPiece, RIGHT, secondRotation );
+            const char secondRight = piece_getSideWithRotation( *secondPiece, RIGHT, secondRotation );
             for ( uint k = 0; k < 36; ++k ) {
-                uint thirdIndex = k / 4; 
+                const uint thirdIndex = k / 4; 
                 if ( thirdIndex == secondIndex || thirdIndex == firstIndex ) {
                     continue;
                 }
-                uint thirdRotation = k % 4;
-                Piece* thirdPiece = puzzle->centerPieces[thirdIndex];
-                char thirdLeft = piece_getSideWithRotation( *thirdPiece, LEFT, thirdRotation );
+                const uint thirdRotation = k % 4;
+                const Piece* thirdPiece = puzzle->centerPieces[thirdIndex];
+                const char thirdLeft = piece_getSideWithRotation( *thirdPiece, LEFT, thirdRotation );
                 if ( secondRight + thirdLeft != 0 ) {
                     continue;
                 }
-                char thirdRight = piece_getSideWithRotation( *thirdPiece, RIGHT, thirdRotation );
+                const char thirdRight = piece_getSideWithRotation( *thirdPiece, RIGHT, thirdRotation );
                 if ( !charArrayContains( validRights, 3, thirdRight ) ) {
                     continue;
                 }
@@ -375,8 +372,6 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         puzzle_recEdgeSolve( puzzle, edges, cornerArrangements[i], 
                              validEdges, numValidEdges, 0, edgeSolutions, &numEdgeSolutions );
     }
-
-    //printf( "Number of edge solutions: %u\n", numEdgeSolutions );
 
     uint numTotalConfigurations = 0;
     PuzzleSolution configurations[100];
