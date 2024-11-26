@@ -397,7 +397,7 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
 
     //for all of the valid configurations, try all possible combinations of edges
     uint numEdgeSolutions = 0;
-    EdgeSolution edgeSolutions[200] = {0};
+    EdgeSolution edgeSolutions[400] = {0};
     for ( uint i = 0; i < 6; ++i ) {
         char edges[4];
         uint temp = numEdgeSolutions;
@@ -406,17 +406,17 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
     }
 
     uint numTotalConfigurations = 0;
-    PuzzleSolution* solutions = malloc( sizeof( PuzzleSolution ) * 100 );
+    PuzzleSolution solutions[300];// = malloc( sizeof( PuzzleSolution ) * 100 );
     uint numSolutions = 0;
-    if ( !solutions ) {
-        fprintf( stderr, "Could not allocate solutions\n" );
-        exit( 1 );
-    }
+    //if ( !solutions ) {
+    //    fprintf( stderr, "Could not allocate solutions\n" );
+    //    exit( 1 );
+    //}
 
     uint configurations[200][2]; //[0] = edge, [1] = center
 
     uint numCenterSolutions = 0;
-    CenterSolution centerSolutions[200];
+    CenterSolution centerSolutions[400];
     for ( uint i = 0; i < numEdgeSolutions; ++i ) {
         uint numValidCenters = 0;
         TripleIndex* validCenters = puzzle_calculateValidCenterRows( puzzle,
@@ -428,7 +428,7 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
                                validCenters, numValidCenters, 0,
                                centerSolutions, &numCenterSolutions);
         for  ( uint j = temp; j < numCenterSolutions; ++j ) {
-            if ( puzzle_countChanges( &edgeSolutions[i], &centerSolutions[j] ) > 10 ) {
+            if ( puzzle_countChanges( &edgeSolutions[i], &centerSolutions[j] ) > 20 ) {
                 puzzle_printSolution( &edgeSolutions[i], &centerSolutions[j] );
             }
             //puzzle_printSolution( &edgeSolutions[i], &centerSolutions[j] );
@@ -437,7 +437,11 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
             configurations[numSolutions][0] = i;
             configurations[numSolutions][1] = j;
             ++numSolutions;
+            if ( numSolutions == 300 ) {
+                printf( "Too many solutions\n" );
+            }
         }
+        free( validCenters );
     }
     if ( numSolutions > 100 ) {
         printf( "----------------\n" );
@@ -446,6 +450,7 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         }
         printf( "\n----------------\n" );
     }
+    free( validEdges );
 }
 
 void puzzle_shuffle( Puzzle* const puzzle ) {
