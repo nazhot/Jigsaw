@@ -478,8 +478,6 @@ void puzzle_shuffle( Puzzle* const puzzle ) {
     uint cornerIndex = 0;
     uint centerIndex = 0;
     uint edgeIndex = 0;
-    puzzle->numEdgeSolutions = 0;
-    puzzle->numCenterSolutions = 0;
 
     for ( uint i = 0; i < 25; ++i ) {
         if ( i == 0 ) {
@@ -554,18 +552,6 @@ Puzzle* puzzle_create( const uint numUniqueConnectors ) {
         exit( 1 );
     }
     puzzle->numUniqueConnectors = numUniqueConnectors;
-    puzzle->maxEdgeSolutions = 400;
-    puzzle->edgeSolutions = malloc( sizeof( EdgeSolution ) * puzzle->maxEdgeSolutions );
-    if ( !puzzle->edgeSolutions ) {
-        fprintf( stderr, "Could not allocate EdgeSolution\n" );
-        exit ( 1 );
-    }
-    puzzle->maxCenterSolutions = 400;
-    puzzle->centerSolutions = malloc( sizeof( CenterSolution ) * puzzle->maxCenterSolutions );
-    if ( !puzzle->centerSolutions ) {
-        fprintf( stderr, "Could not allocate CenterSolution\n" );
-        exit ( 1 );
-    }
 
     puzzle_shuffle( puzzle );
 

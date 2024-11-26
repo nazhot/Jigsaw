@@ -40,14 +40,6 @@ typedef struct Puzzle {
     char connections[40]; //vertical connections first, top to bottom, left to right
                           //negative is innie -> outie
     uint numUniqueConnectors; 
-
-    EdgeSolution* edgeSolutions;
-    uint numEdgeSolutions;
-    uint maxEdgeSolutions;
-
-    CenterSolution* centerSolutions;
-    uint numCenterSolutions;
-    uint maxCenterSolutions;
 } Puzzle;
 
 
