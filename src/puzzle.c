@@ -344,6 +344,28 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
         if ( rightCenter + rightEdge != 0 ) {
             continue;
         }
+
+        if ( currentRow == 0 ) {
+            for ( uint j = 0; j < 3; ++j ) {
+                if ( piece_getSideWithRotation( puzzle->pieces[row.indexes[j]], TOP, row.rotations[j] ) +
+                     piece_getSide( puzzle->pieces[edgeSolution->topEdgeIndexes[j]], BOTTOM ) != 0 ) {
+                    valid = false;
+                    break;
+                }
+            }
+        } else if ( currentRow == 2 ) {
+            for ( uint j = 0; j < 3; ++j ) {
+                if ( piece_getSideWithRotation( puzzle->pieces[row.indexes[j]], BOTTOM, row.rotations[j] ) +
+                     piece_getSide( puzzle->pieces[edgeSolution->bottomEdgeIndexes[j]], BOTTOM ) != 0 ) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+        if ( !valid ) {
+            continue;
+        }
+
         centerIndexes[currentRow] = i;
         puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, 
                              centerTriples, numCenterTriples, currentRow + 1,
