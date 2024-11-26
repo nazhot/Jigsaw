@@ -12,7 +12,9 @@ int main( int argc, char *argv[] ) {
     uint numPuzzles = 1;
 
     for ( uint i = 0; i < 50; ++i ) {
+        printf( "----Puzzle %u----\n", i );
         puzzle_findValidSolutions( puzzle );
+        printf( "-----------------\n\n" );
         puzzle_shuffle( puzzle );
     }
 
