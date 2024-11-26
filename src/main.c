@@ -7,14 +7,12 @@
 int main( int argc, char *argv[] ) {
 
     srand( time( NULL ) );
-    Puzzle* puzzle = puzzle_create( 18 );
+    Puzzle* puzzle = puzzle_create( 6 );
     uint count;
     uint numPuzzles = 1;
 
-    for ( uint i = 0; i < 50; ++i ) {
-        printf( "----Puzzle %u----\n", i );
+    for ( uint i = 0; i < 1000000; ++i ) {
         puzzle_findValidSolutions( puzzle );
-        printf( "-----------------\n\n" );
         puzzle_shuffle( puzzle );
     }
 

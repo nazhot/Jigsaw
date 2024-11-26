@@ -8,6 +8,28 @@
 #define OUTIE_BITMASK 128
 
 
+typedef struct TripleIndex {
+    char indexes[3];
+    char rotations[3];
+} TripleIndex;
+
+typedef struct EdgeSolution {
+    char cornerIndexes[4];
+    char topEdgeIndexes[3]; //left to right
+    char leftEdgeIndexes[3]; //top to bottom
+    char rightEdgeIndexes[3]; //top to bottom
+    char bottomEdgeIndexes[3]; //left to right
+} EdgeSolution;
+
+typedef struct CenterSolution {
+    char indexes[3][3];
+    char rotations[3][3];
+} CenterSolution;
+
+typedef struct PuzzleSolution {
+    CenterSolution* centers;
+    EdgeSolution* edges;
+} PuzzleSolution;
 
 typedef struct Puzzle {
     Piece pieces[25];
@@ -22,7 +44,7 @@ typedef struct Puzzle {
 } Puzzle;
 
 
-uint puzzle_findValidSolutions( const Puzzle* const puzzle );
+void puzzle_findValidSolutions( const Puzzle* const puzzle );
 void puzzle_shuffle( Puzzle* const puzzle );
 Puzzle* puzzle_create( const uint numUniqueConnectors );
 void puzzle_printLayout( const Puzzle* const puzzle );
