@@ -60,8 +60,10 @@ static bool charArrayContains( const char* const array, const uint arraySize,
     return false;
 }
 
-static TripleIndex* puzzle_calculateValidEdges( const Puzzle* const puzzle,
-                                                uint* const numSolutions ) {
+static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
+                                                TripleIndex* const validEdges,
+                                                uint* const numValidEdges,
+                                                const uint maxValidEdges ) {
     //Right/Left refer to Right/Left of edge pieces
     char validLefts[4] = {0};
     char validRights[4] = {0};
@@ -71,8 +73,7 @@ static TripleIndex* puzzle_calculateValidEdges( const Puzzle* const puzzle,
         validRights[i] = -piece_getSide( *corner, LEFT );
     }
 
-    char validTriples[1320][3];
-    uint numValidTriples = 0;
+    *numValidEdges = 0;
     for ( uint i = 0; i < 12; ++i ) { //left
         const Piece* first = puzzle->edgePieces[i];
         const char firstLeft = piece_getSide( *first, LEFT );
@@ -107,26 +108,17 @@ static TripleIndex* puzzle_calculateValidEdges( const Puzzle* const puzzle,
                     continue;
                 }
 
-                validTriples[numValidTriples][0] = first->index;
-                validTriples[numValidTriples][1] = second->index;
-                validTriples[numValidTriples][2] = third->index;
-                ++numValidTriples;
+                validEdges[*numValidEdges].indexes[0] = first->index;
+                validEdges[*numValidEdges].indexes[1] = second->index;
+                validEdges[*numValidEdges].indexes[2] = third->index;
+                ++*numValidEdges;
+                if ( *numValidEdges == maxValidEdges ) {
+                    fprintf( stderr, "Too many valid edges\n" );
+                    exit( 1 );
+                }
             }
         }
     }
-    *numSolutions = numValidTriples;
-    TripleIndex* solutions = malloc( sizeof( TripleIndex ) * numValidTriples );
-    if ( !solutions ) {
-        fprintf( stderr, "Could not allocate TripleSol\n" );
-        exit( 1 );
-    }
-    for ( uint i = 0; i < numValidTriples; ++i ) {
-        for ( uint j = 0; j < 3; ++j ) {
-            solutions[i].indexes[j] = validTriples[i][j];
-        }
-    }
-
-    return solutions;
 }
 
 static void puzzle_recEdgeSolve( const Puzzle* const puzzle, char edgeIndexes[4],
@@ -185,9 +177,11 @@ static void puzzle_recEdgeSolve( const Puzzle* const puzzle, char edgeIndexes[4]
     }
 }
 
-static TripleIndex* puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
+static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                                                      const EdgeSolution* edgeSolution,
-                                                     uint* const numSolutions ) { 
+                                                     TripleIndex* const validCenterRows,
+                                                     uint* const numValidCenterRows,
+                                                     const uint maxValidCenterRows ) { 
 
     //Right/Left refer to Right/Left of edge pieces
     char validLefts[3] = {0};
@@ -199,8 +193,7 @@ static TripleIndex* puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
         validRights[i]= -piece_getSide( *rightEdge, BOTTOM );
     }
 
-    TripleIndex validTriples[13200];
-    uint numValidTriples = 0;
+    *numValidCenterRows = 0;
 
     for ( uint i = 0; i < 36; ++i ) {
         const uint firstIndex = i / 4; 
@@ -239,34 +232,19 @@ static TripleIndex* puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                     continue;
                 }
 
-                validTriples[numValidTriples].indexes[0] = firstPiece->index;
-                validTriples[numValidTriples].indexes[1] = secondPiece->index;
-                validTriples[numValidTriples].indexes[2] = thirdPiece->index;
-                validTriples[numValidTriples].rotations[0] = firstRotation;
-                validTriples[numValidTriples].rotations[1] = secondRotation;
-                validTriples[numValidTriples].rotations[2] = thirdRotation;
-                ++numValidTriples;
-                if ( numValidTriples >= 13200 ) {
-                    printf( "Center error\n" );
+                validCenterRows[*numValidCenterRows].indexes[0] = firstPiece->index;
+                validCenterRows[*numValidCenterRows].indexes[1] = secondPiece->index;
+                validCenterRows[*numValidCenterRows].indexes[2] = thirdPiece->index;
+                validCenterRows[*numValidCenterRows].rotations[0] = firstRotation;
+                validCenterRows[*numValidCenterRows].rotations[1] = secondRotation;
+                validCenterRows[*numValidCenterRows].rotations[2] = thirdRotation;
+                ++*numValidCenterRows;
+                if ( *numValidCenterRows == maxValidCenterRows ) {
+                    printf( "Too many CenterRows error\n" );
                 }
             }
         }
     }
-
-    *numSolutions = numValidTriples;
-    TripleIndex* solutions = malloc( sizeof( TripleIndex ) * numValidTriples );
-    if ( !solutions ) {
-        fprintf( stderr, "Could not allocate EdgeSolution\n" );
-        exit( 1 );
-    }
-    for ( uint i = 0; i < numValidTriples; ++i ) {
-        for ( uint j = 0; j < 3; ++j ) {
-            solutions[i].indexes[j] = validTriples[i].indexes[j];
-            solutions[i].rotations[j] = validTriples[i].rotations[j];
-        }
-    }
-
-    return solutions;
 }
 
 void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
@@ -390,7 +368,9 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
                                                    {0, 24, 4, 20, 0}, {0, 24, 20, 4, 0} };
     //get the valid triplets of edges
     uint numValidEdges = 0;
-    TripleIndex* validEdges = puzzle_calculateValidEdges( puzzle, &numValidEdges );
+    const uint maxValidEdges = 400;
+    TripleIndex validEdges[maxValidEdges];
+    puzzle_calculateValidEdges( puzzle, validEdges, &numValidEdges, maxValidEdges );
     if ( numValidEdges < 4 ) {
         printf( "Error in edge solver\n" );
     }
@@ -419,9 +399,10 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
     CenterSolution centerSolutions[400];
     for ( uint i = 0; i < numEdgeSolutions; ++i ) {
         uint numValidCenters = 0;
-        TripleIndex* validCenters = puzzle_calculateValidCenterRows( puzzle,
-                                                                     &edgeSolutions[i],
-                                                                     &numValidCenters );
+        const uint maxValidCenters = 400;
+        TripleIndex validCenters[maxValidCenters];
+        puzzle_calculateValidCenterRows( puzzle, &edgeSolutions[i], validCenters,
+                                         &numValidCenters, maxValidCenters );
         char centerIndexes[3];
         uint temp = numCenterSolutions;
         puzzle_recCenterSolve( puzzle, centerIndexes, &edgeSolutions[i],
@@ -441,16 +422,14 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
                 printf( "Too many solutions\n" );
             }
         }
-        free( validCenters );
     }
-    if ( numSolutions > 100 ) {
+    if ( numSolutions > 10 ) {
         printf( "----------------\n" );
         for ( uint i = 0; i < numSolutions; ++i ) {
             puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
         }
         printf( "\n----------------\n" );
     }
-    free( validEdges );
 }
 
 void puzzle_shuffle( Puzzle* const puzzle ) {
