@@ -301,16 +301,16 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
 
         if ( currentRow == 0 ) {
             for ( uint j = 0; j < 3; ++j ) {
-                if ( piece_getSideWithRotation( puzzle->pieces[row.indexes[j]], TOP, row.rotations[j] ) +
-                     piece_getSide( puzzle->pieces[edgeSolution->topEdgeIndexes[j]], BOTTOM ) != 0 ) {
+                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], TOP, row.rotations[j] ) +
+                     piece_getSide( puzzle->pieces[( int ) edgeSolution->topEdgeIndexes[j]], BOTTOM ) != 0 ) {
                     valid = false;
                     break;
                 }
             }
         } else if ( currentRow == 2 ) {
             for ( uint j = 0; j < 3; ++j ) {
-                if ( piece_getSideWithRotation( puzzle->pieces[row.indexes[j]], BOTTOM, row.rotations[j] ) +
-                     piece_getSide( puzzle->pieces[edgeSolution->bottomEdgeIndexes[j]], BOTTOM ) != 0 ) {
+                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], BOTTOM, row.rotations[j] ) +
+                     piece_getSide( puzzle->pieces[( int ) edgeSolution->bottomEdgeIndexes[j]], BOTTOM ) != 0 ) {
                     valid = false;
                     break;
                 }
@@ -380,19 +380,11 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
     EdgeSolution edgeSolutions[400] = {0};
     for ( uint i = 0; i < 6; ++i ) {
         char edges[4];
-        uint temp = numEdgeSolutions;
         puzzle_recEdgeSolve( puzzle, edges, cornerArrangements[i], 
                              validEdges, numValidEdges, 0, edgeSolutions, &numEdgeSolutions );
     }
 
     uint numTotalConfigurations = 0;
-    PuzzleSolution solutions[300];// = malloc( sizeof( PuzzleSolution ) * 100 );
-    uint numSolutions = 0;
-    //if ( !solutions ) {
-    //    fprintf( stderr, "Could not allocate solutions\n" );
-    //    exit( 1 );
-    //}
-
     uint configurations[200][2]; //[0] = edge, [1] = center
 
     uint numCenterSolutions = 0;
@@ -412,20 +404,17 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
             if ( puzzle_countChanges( &edgeSolutions[i], &centerSolutions[j] ) > 20 ) {
                 puzzle_printSolution( &edgeSolutions[i], &centerSolutions[j] );
             }
-            //puzzle_printSolution( &edgeSolutions[i], &centerSolutions[j] );
-            //solutions[numSolutions].centers = &centerSolutions[j];
-            //solutions[numSolutions].edges = &edgeSolutions[i];
-            configurations[numSolutions][0] = i;
-            configurations[numSolutions][1] = j;
-            ++numSolutions;
-            if ( numSolutions == 300 ) {
+            configurations[numTotalConfigurations][0] = i;
+            configurations[numTotalConfigurations][1] = j;
+            ++numTotalConfigurations;
+            if ( numTotalConfigurations == 300 ) {
                 printf( "Too many solutions\n" );
             }
         }
     }
-    if ( numSolutions > 10 ) {
+    if ( numTotalConfigurations > 100 ) {
         printf( "----------------\n" );
-        for ( uint i = 0; i < numSolutions; ++i ) {
+        for ( uint i = 0; i < numTotalConfigurations; ++i ) {
             puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
         }
         printf( "\n----------------\n" );
@@ -458,68 +447,60 @@ void puzzle_shuffle( Puzzle* const puzzle ) {
     uint centerIndex = 0;
     uint edgeIndex = 0;
 
+
     for ( uint i = 0; i < 25; ++i ) {
         if ( i == 0 ) {
-            puzzle->pieces[0] = piece_create( CORNER, i );
-            piece_setSide( &puzzle->pieces[0], RIGHT, puzzle->connections[0] );
-            piece_setSide( &puzzle->pieces[0], LEFT, puzzle->connections[20] );
+            puzzle->pieces[0] = piece_create( CORNER, i, 0, puzzle->connections[0],
+                                              0, puzzle->connections[20] );
             puzzle->cornerPieces[cornerIndex++] = &puzzle->pieces[i];
             continue;
         } else if ( i == 4 ) {
-            puzzle->pieces[4] = piece_create( CORNER, i );
-            piece_setSide( &puzzle->pieces[4], RIGHT, puzzle->connections[24] );
-            piece_setSide( &puzzle->pieces[4], LEFT, -puzzle->connections[15] );
+            puzzle->pieces[4] = piece_create( CORNER, i, 0, puzzle->connections[24],
+                                              0, -puzzle->connections[15] );
             puzzle->cornerPieces[cornerIndex++] = &puzzle->pieces[i];
             continue;
         } else if ( i == 20 ) {
-            puzzle->pieces[20] = piece_create( CORNER, i );
-            piece_setSide( &puzzle->pieces[20], RIGHT, -puzzle->connections[35] );
-            piece_setSide( &puzzle->pieces[20], LEFT, puzzle->connections[4] );
+            puzzle->pieces[20] = piece_create( CORNER, i, 0, -puzzle->connections[35],
+                                               0, puzzle->connections[4] );
             puzzle->cornerPieces[cornerIndex++] = &puzzle->pieces[i];
             continue;
         } else if ( i == 24 ) {
-            puzzle->pieces[24] = piece_create( CORNER, i );
-            piece_setSide( &puzzle->pieces[24], RIGHT, -puzzle->connections[19] );
-            piece_setSide( &puzzle->pieces[24], LEFT, -puzzle->connections[39] );
+            puzzle->pieces[24] = piece_create( CORNER, i, 0, -puzzle->connections[19],
+                                               0, -puzzle->connections[39] );
             puzzle->cornerPieces[cornerIndex++] = &puzzle->pieces[i];
             continue;
         } else if ( i < 4 ) { //top edge
-            puzzle->pieces[i] = piece_create( EDGE, i );
-            piece_setSide( &puzzle->pieces[i], RIGHT, puzzle->connections[i * 5] );
-            piece_setSide( &puzzle->pieces[i], LEFT, -puzzle->connections[( i - 1 ) * 5] );
-            piece_setSide( &puzzle->pieces[i], BOTTOM, puzzle->connections[i + 20] );
+            puzzle->pieces[i] = piece_create( EDGE, i, 0, puzzle->connections[i * 5],
+                                              puzzle->connections[i + 20],
+                                              -puzzle->connections[( i - 1 ) * 5] );
             puzzle->edgePieces[edgeIndex++] = &puzzle->pieces[i];
             continue;
         } else if ( i % 5 == 0 ) { //left edge
-            puzzle->pieces[i] = piece_create( EDGE, i );
-            piece_setSide( &puzzle->pieces[i], RIGHT, -puzzle->connections[i + 15] );
-            piece_setSide( &puzzle->pieces[i], LEFT, puzzle->connections[i + 20] );
-            piece_setSide( &puzzle->pieces[i], BOTTOM, puzzle->connections[i / 5] );
+            puzzle->pieces[i] = piece_create( EDGE, i, 0, -puzzle->connections[i + 15],
+                                              puzzle->connections[i / 5],
+                                              puzzle->connections[i + 20] );
             puzzle->edgePieces[edgeIndex++] = &puzzle->pieces[i];
             continue;
         } else if ( ( i - 4) % 5 == 0 ) { //right edge
-            puzzle->pieces[i] = piece_create( EDGE, i );
-            piece_setSide( &puzzle->pieces[i], RIGHT, puzzle->connections[i + 20] );
-            piece_setSide( &puzzle->pieces[i], LEFT, -puzzle->connections[i + 15] );
-            piece_setSide( &puzzle->pieces[i], BOTTOM, -puzzle->connections[( i + 1 ) / 5 + 14] );
+            puzzle->pieces[i] = piece_create( EDGE, i, 0, puzzle->connections[i + 20],
+                                              -puzzle->connections[( i + 1 ) / 5 + 14],
+                                              -puzzle->connections[i + 15] );
             puzzle->edgePieces[edgeIndex++] = &puzzle->pieces[i];
             continue;
         } else if ( i > 20 && i < 24 ) { //bottom edge
-            puzzle->pieces[i] = piece_create( EDGE, i );
-            piece_setSide( &puzzle->pieces[i], RIGHT, -puzzle->connections[( i - 21 ) * 5 + 4] );
-            piece_setSide( &puzzle->pieces[i], LEFT, puzzle->connections[( i - 20 ) * 5 + 4] );
-            piece_setSide( &puzzle->pieces[i], BOTTOM, -puzzle->connections[i + 15] );
+            puzzle->pieces[i] = piece_create( EDGE, i, 0, -puzzle->connections[( i - 21 ) * 5 + 4],
+                                              -puzzle->connections[i + 15],
+                                              puzzle->connections[( i - 20 ) * 5 + 4] );
             puzzle->edgePieces[edgeIndex++] = &puzzle->pieces[i];
             continue;
         }
 
-        puzzle->pieces[i] = piece_create( CENTER, i );
         uint row = i / 5;
         uint col = i % 5;
-        piece_setSide( &puzzle->pieces[i], TOP, -puzzle->connections[i + 15] );
-        piece_setSide( &puzzle->pieces[i], RIGHT, puzzle->connections[5 * col + row] );
-        piece_setSide( &puzzle->pieces[i], BOTTOM, puzzle->connections[i + 20] );
-        piece_setSide( &puzzle->pieces[i], LEFT, -puzzle->connections[5 * ( col - 1 ) + row] );
+        puzzle->pieces[i] = piece_create( CENTER, i, -puzzle->connections[i + 15],
+                                          puzzle->connections[5 * col + row],
+                                          puzzle->connections[i + 20],
+                                          -puzzle->connections[5 * ( col - 1 ) + row] );
         puzzle->centerPieces[centerIndex++] = &puzzle->pieces[i];
     }
 }
