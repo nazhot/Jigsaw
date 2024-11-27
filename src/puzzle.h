@@ -43,7 +43,7 @@ typedef struct Puzzle {
 } Puzzle;
 
 
-void puzzle_findValidSolutions( const Puzzle* const puzzle );
+uint puzzle_findValidSolutions( const Puzzle* const puzzle );
 void puzzle_shuffle( Puzzle* const puzzle );
 Puzzle* puzzle_create( const uint numUniqueConnectors );
 void puzzle_printLayout( const Puzzle* const puzzle );

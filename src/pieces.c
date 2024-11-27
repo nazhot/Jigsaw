@@ -22,13 +22,6 @@ __inline__ char piece_getSideWithRotation( const Piece piece, const SideDirectio
     return piece.sides[( side + rotation ) % 4 ];
 }
 
-static void printChar( const char value ) {
-    for ( int i = 7; i >= 0; --i ) {
-        printf( "%i", value >> i & 1 ? 1 : 0 );
-    }
-    printf( "\n" );
-}
-
 void piece_print( const Piece* const piece ) {
     const static char* types[] = { [CENTER] = "Center", [CORNER] = "Corner",
         [EDGE] = "Edge" };

@@ -28,6 +28,11 @@ typedef struct Piece {
     char index;
 } Piece;
 
+typedef struct PiecePair {
+    char index;;
+    SideDirection sides[2];
+} PiecePair;
+
 
 Piece piece_create( const PieceType type, const uint index, const char top,
                     const char right, const char bottom, const char left );

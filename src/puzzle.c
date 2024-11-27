@@ -125,13 +125,13 @@ static void puzzle_recEdgeSolve( const Puzzle* const puzzle, char edgeIndexes[4]
                           const char* const currentArrangement,
                           const TripleIndex* const edgeTriples, const uint numEdgeTriples,
                           const uint currentEdge, EdgeSolution* const edgeSolutions,
-                          uint* const numEdgeSolutions ) {
+                          uint* const numEdgeSolutions, const uint maxEdgeSolutions ) {
     const char leftCorner = piece_getSide( puzzle->pieces[( int ) currentArrangement[( int ) currentEdge]], RIGHT );
     const char rightCorner = piece_getSide( puzzle->pieces[( int ) currentArrangement[( int  ) currentEdge + 1]], LEFT );
 
     for ( int i = 0; i < numEdgeTriples; ++i ) {
         if ( charArrayContains( edgeIndexes, currentEdge, i ) ) {
-         continue;   
+            continue;   
         }
 
         bool valid = true;
@@ -169,10 +169,14 @@ static void puzzle_recEdgeSolve( const Puzzle* const puzzle, char edgeIndexes[4]
                 }
             }
             ++*numEdgeSolutions;
+            if ( *numEdgeSolutions == maxEdgeSolutions ) {
+                fprintf( stderr, "Too many edge solutions\n" );
+                exit( 1 );
+            }
         } else {
             puzzle_recEdgeSolve( puzzle, edgeIndexes, currentArrangement, 
                                  edgeTriples, numEdgeTriples, currentEdge + 1,
-                                 edgeSolutions, numEdgeSolutions );
+                                 edgeSolutions, numEdgeSolutions, maxEdgeSolutions );
         }
     }
 }
@@ -251,7 +255,7 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
                           const EdgeSolution* const edgeSolution,
                           const TripleIndex* const centerTriples, const uint numCenterTriples,
                           const uint currentRow, CenterSolution* const centerSolutions,
-                          uint *numCenterSolutions ) {
+                          uint *numCenterSolutions, const uint maxCenterSolutions ) {
     if ( currentRow == 3 ) {
         for ( uint i = 0; i < 3; ++i ) {
             TripleIndex row = centerTriples[( int ) centerIndexes[i]];
@@ -261,18 +265,22 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
             }
         }
         ++*numCenterSolutions;
+        if ( *numCenterSolutions == maxCenterSolutions ) {
+            fprintf( stderr, "Too many center solutions\n" );
+            exit( 1 );
+        }
         return;
     }
 
-    char leftEdge = piece_getSide( puzzle->pieces[( int ) edgeSolution->leftEdgeIndexes[currentRow]], BOTTOM );
-    char rightEdge = piece_getSide( puzzle->pieces[( int ) edgeSolution->rightEdgeIndexes[currentRow]], BOTTOM );
+    const char leftEdge = piece_getSide( puzzle->pieces[( int ) edgeSolution->leftEdgeIndexes[currentRow]], BOTTOM );
+    const char rightEdge = piece_getSide( puzzle->pieces[( int ) edgeSolution->rightEdgeIndexes[currentRow]], BOTTOM );
 
     for ( int i = 0; i < numCenterTriples; ++i ) {
         if ( charArrayContains( centerIndexes, currentRow, i ) ) {
             continue;   
         }
 
-        TripleIndex row = centerTriples[i];
+        const TripleIndex row = centerTriples[i];
 
         bool valid = true;
         for ( uint j = 0; j < currentRow; ++j ) {
@@ -290,11 +298,11 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
         if ( !valid ) {
             continue;
         }
-        char leftCenter = piece_getSide( puzzle->pieces[( int ) row.indexes[0]], LEFT );
+        const char leftCenter = piece_getSide( puzzle->pieces[( int ) row.indexes[0]], LEFT );
         if ( leftCenter + leftEdge != 0  ){
             continue;
         }
-        char rightCenter = piece_getSide( puzzle->pieces[( int ) row.indexes[2]], RIGHT );
+        const char rightCenter = piece_getSide( puzzle->pieces[( int ) row.indexes[2]], RIGHT );
         if ( rightCenter + rightEdge != 0 ) {
             continue;
         }
@@ -323,7 +331,7 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
         centerIndexes[currentRow] = i;
         puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, 
                              centerTriples, numCenterTriples, currentRow + 1,
-                             centerSolutions, numCenterSolutions );
+                             centerSolutions, numCenterSolutions, maxCenterSolutions );
     }
 }
 
@@ -332,6 +340,18 @@ static uint puzzle_countChanges( const EdgeSolution* const edgeSolution,
     const static char corners[] = { 0, 4, 24, 20 };
     uint count = 0;
     for ( uint i = 0; i < 3; ++i ) {
+        if ( edgeSolution->topEdgeIndexes[i] != i + 1 ) {
+            ++count;
+        }
+        if ( edgeSolution->leftEdgeIndexes[i] != ( i + 1 ) * 5 ) {
+            ++count;
+        }
+        if ( edgeSolution->rightEdgeIndexes[i] != ( i + 1 ) * 5 + 4 ) {
+            ++count;
+        }
+        if ( edgeSolution->bottomEdgeIndexes[i] != i + 21 ) {
+            ++count;
+        }
         for ( uint j = 0; j < 3; ++j ) {
             char index = ( i + 1 ) * 5 + 1 + j;
             if ( centerSolution->indexes[i][j] != index ) {
@@ -344,28 +364,73 @@ static uint puzzle_countChanges( const EdgeSolution* const edgeSolution,
         if ( edgeSolution->cornerIndexes[i] != corners[i] ) {
             ++count;
         }
-        if ( i < 3 ) {
-            if ( edgeSolution->topEdgeIndexes[i] != i + 1 ) {
-                ++count;
-            }
-            if ( edgeSolution->leftEdgeIndexes[i] != ( i + 1 ) * 5 ) {
-                ++count;
-            }
-            if ( edgeSolution->rightEdgeIndexes[i] != ( i + 1 ) * 5 + 4 ) {
-                ++count;
-            }
-            if ( edgeSolution->bottomEdgeIndexes[i] != i + 21 ) {
-                ++count;
-            }
-        }
     }
     return count;
 }
-void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
+
+static void puzzle_generateOriginalPiecePairs( PiecePair pairs[24][2]) {
+    pairs[0][0] = ( PiecePair ) { .index = 1, .sides = { RIGHT, LEFT } };
+    pairs[0][1] = ( PiecePair ) { .index = 5, .sides = { LEFT, RIGHT } };
+    pairs[1][0] = ( PiecePair ) { .index = 2, .sides = { RIGHT, LEFT } };
+    pairs[1][1] = ( PiecePair ) { .index = 6, .sides = { BOTTOM, TOP } };
+    pairs[2][0] = ( PiecePair ) { .index = 3, .sides = { RIGHT, LEFT } };
+    pairs[2][1] = ( PiecePair ) { .index = 7, .sides = { BOTTOM, TOP } };
+    pairs[3][0] = ( PiecePair ) { .index = 4, .sides = { RIGHT, LEFT } };
+    pairs[3][1] = ( PiecePair ) { .index = 8, .sides = { BOTTOM, TOP } };
+    pairs[4][0] = ( PiecePair ) { .index = 9, .sides = { RIGHT, LEFT } };
+
+    pairs[5][0] = ( PiecePair ) { .index = 6, .sides = { BOTTOM, LEFT } };
+    pairs[5][1] = ( PiecePair ) { .index = 10, .sides = { LEFT, RIGHT } };
+    pairs[6][0] = ( PiecePair ) { .index = 7, .sides = { RIGHT, LEFT } };
+    pairs[6][1] = ( PiecePair ) { .index = 11, .sides = { BOTTOM, TOP } };
+    pairs[7][0] = ( PiecePair ) { .index = 8, .sides = { RIGHT, LEFT } };
+    pairs[7][1] = ( PiecePair ) { .index = 12, .sides = { BOTTOM, TOP } };
+    pairs[8][0] = ( PiecePair ) { .index = 9, .sides = { RIGHT, LEFT } };
+    pairs[8][1] = ( PiecePair ) { .index = 13, .sides = { BOTTOM, TOP } };
+    pairs[9][0] = ( PiecePair ) { .index = 14, .sides = { RIGHT, LEFT } };
+
+    pairs[10][0] = ( PiecePair ) { .index = 11, .sides = { BOTTOM, LEFT } };
+    pairs[10][1] = ( PiecePair ) { .index = 15, .sides = { LEFT, RIGHT } };
+    pairs[11][0] = ( PiecePair ) { .index = 12, .sides = { RIGHT, LEFT } };
+    pairs[11][1] = ( PiecePair ) { .index = 16, .sides = { BOTTOM, TOP } };
+    pairs[12][0] = ( PiecePair ) { .index = 13, .sides = { RIGHT, LEFT } };
+    pairs[12][1] = ( PiecePair ) { .index = 17, .sides = { BOTTOM, TOP } };
+    pairs[13][0] = ( PiecePair ) { .index = 14, .sides = { RIGHT, LEFT } };
+    pairs[13][1] = ( PiecePair ) { .index = 18, .sides = { BOTTOM, TOP } };
+    pairs[14][0] = ( PiecePair ) { .index = 19, .sides = { RIGHT, LEFT } };
+
+    pairs[15][0] = ( PiecePair ) { .index = 16, .sides = { BOTTOM, LEFT } };
+    pairs[15][1] = ( PiecePair ) { .index = 20, .sides = { LEFT, RIGHT } };
+    pairs[16][0] = ( PiecePair ) { .index = 17, .sides = { RIGHT, LEFT } };
+    pairs[16][1] = ( PiecePair ) { .index = 21, .sides = { BOTTOM, TOP } };
+    pairs[17][0] = ( PiecePair ) { .index = 18, .sides = { RIGHT, LEFT } };
+    pairs[17][1] = ( PiecePair ) { .index = 22, .sides = { BOTTOM, TOP } };
+    pairs[18][0] = ( PiecePair ) { .index = 19, .sides = { RIGHT, LEFT } };
+    pairs[18][1] = ( PiecePair ) { .index = 23, .sides = { BOTTOM, TOP } };
+    pairs[19][0] = ( PiecePair ) { .index = 24, .sides = { RIGHT, LEFT } };
+
+    pairs[20][0] = ( PiecePair ) { .index = 21, .sides = { LEFT, RIGHT } };
+    pairs[21][0] = ( PiecePair ) { .index = 22, .sides = { LEFT, RIGHT } };
+    pairs[22][0] = ( PiecePair ) { .index = 23, .sides = { LEFT, RIGHT } };
+    pairs[23][0] = ( PiecePair ) { .index = 24, .sides = { LEFT, RIGHT } };
+}
+
+static uint puzzle_calculateOriginalConnections( const PuzzleSolution* solution ) {
+    uint numOriginalConnections = 0;
+    return numOriginalConnections;
+}
+
+uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
     //only 6 valid arangements of corners (top left, top right, bottom right, bottom left)
     const static char cornerArrangements[6][5] = { {0, 4, 20, 24, 0}, {0, 4, 24, 20, 0},
                                                    {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
                                                    {0, 24, 4, 20, 0}, {0, 24, 20, 4, 0} };
+    static bool pairsGenerated = false;
+    PiecePair pairs[24][2];
+    if ( !pairsGenerated ) {
+        puzzle_generateOriginalPiecePairs( pairs );
+        pairsGenerated = true;
+    }
     //get the valid triplets of edges
     uint numValidEdges = 0;
     const uint maxValidEdges = 400;
@@ -377,18 +442,21 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
 
     //for all of the valid configurations, try all possible combinations of edges
     uint numEdgeSolutions = 0;
-    EdgeSolution edgeSolutions[400] = {0};
+    uint maxEdgeSolutions = 7920;
+    EdgeSolution edgeSolutions[maxEdgeSolutions];
     for ( uint i = 0; i < 6; ++i ) {
         char edges[4];
         puzzle_recEdgeSolve( puzzle, edges, cornerArrangements[i], 
-                             validEdges, numValidEdges, 0, edgeSolutions, &numEdgeSolutions );
+                             validEdges, numValidEdges, 0, edgeSolutions,
+                             &numEdgeSolutions, maxEdgeSolutions );
     }
 
     uint numTotalConfigurations = 0;
     uint configurations[200][2]; //[0] = edge, [1] = center
 
     uint numCenterSolutions = 0;
-    CenterSolution centerSolutions[400];
+    uint maxCenterSolutions = 2000;
+    CenterSolution centerSolutions[maxCenterSolutions];
     for ( uint i = 0; i < numEdgeSolutions; ++i ) {
         uint numValidCenters = 0;
         const uint maxValidCenters = 400;
@@ -399,7 +467,7 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         uint temp = numCenterSolutions;
         puzzle_recCenterSolve( puzzle, centerIndexes, &edgeSolutions[i],
                                validCenters, numValidCenters, 0,
-                               centerSolutions, &numCenterSolutions);
+                               centerSolutions, &numCenterSolutions, maxCenterSolutions );
         for  ( uint j = temp; j < numCenterSolutions; ++j ) {
             if ( puzzle_countChanges( &edgeSolutions[i], &centerSolutions[j] ) > 20 ) {
                 puzzle_printSolution( &edgeSolutions[i], &centerSolutions[j] );
@@ -412,13 +480,16 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle ) {
             }
         }
     }
-    if ( numTotalConfigurations > 100 ) {
+    /*
+    if ( numTotalConfigurations > 1000 ) {
         printf( "----------------\n" );
         for ( uint i = 0; i < numTotalConfigurations; ++i ) {
             puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
         }
         printf( "\n----------------\n" );
     }
+    */
+    return numTotalConfigurations;
 }
 
 void puzzle_shuffle( Puzzle* const puzzle ) {
@@ -528,5 +599,8 @@ void puzzle_printLayout( const Puzzle* const puzzle ) {
 }
 
 void puzzle_free( Puzzle* const puzzle ) {
-
+    if ( !puzzle ) {
+        return;
+    }
+    free( puzzle );
 }
