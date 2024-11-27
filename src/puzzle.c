@@ -369,6 +369,28 @@ static uint puzzle_countChanges( const EdgeSolution* const edgeSolution,
 }
 
 static void puzzle_generateOriginalPiecePairs( PiecePair pairs[24][2]) {
+    //vertical
+    char connections[40][2];
+    uint numConnections = 0;
+    for ( uint row = 0; row < 5; ++row ) {
+        for ( uint col = 0; col < 4; ++col ) {
+            char index = row * 5 + col;
+            connections[numConnections][0] = index;
+            connections[numConnections][1] = index + 1;
+            ++numConnections;
+        }
+    }
+
+    for ( uint row = 0; row < 4; ++row ) {
+        for ( uint col = 0; col < 5; ++col ) {
+            char index = row * 5 + col;
+            connections[numConnections][0] = index;
+            connections[numConnections][1] = index + 5;
+            ++numConnections;
+        }
+    }
+
+
     pairs[0][0] = ( PiecePair ) { .index = 1, .sides = { RIGHT, LEFT } };
     pairs[0][1] = ( PiecePair ) { .index = 5, .sides = { LEFT, RIGHT } };
     pairs[1][0] = ( PiecePair ) { .index = 2, .sides = { RIGHT, LEFT } };
@@ -419,6 +441,8 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
                                                  const PuzzleSolution* const solution,
                                                  const PiecePair pairs[24][2] ) {
     const static char corners[] = { 0, 4, 24, 20 };
+    
+
     uint numOriginalConnections = 0;
     char indexes[25];
     char rotations[25] = {0};
@@ -441,26 +465,6 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
 
 
     for ( uint i = 0; i < 25; ++i ) {
-        char solutionIndex = indexes[i];
-        char solutionRotation = rotations[i];
-        char check1Index = pairs[solutionIndex][0].index;
-        SideDirection check1Side = pairs[solutionIndex][0].sides[1];
-        char check1Rotation = rotations[check1Index];
-        SideDirection solution1Side = pairs[solutionIndex][0].sides[0];
-        char check2Index = pairs[solutionIndex][1].index;
-        SideDirection check2Side = pairs[solutionIndex][1].sides[1];
-        char check2Rotation = rotations[check2Index];
-        SideDirection solution2Side = pairs[solutionIndex][1].sides[0];
-
-        if ( piece_getSideWithRotation( puzzle->pieces[solutionIndex], solution1Side, solutionRotation ) +
-            piece_getSideWithRotation( puzzle->pieces[check1Index], check1Side, check1Rotation ) == 0 ) {
-            ++numOriginalConnections;
-        }
-        if ( piece_getSideWithRotation( puzzle->pieces[solutionIndex], solution2Side, solutionRotation ) +
-            piece_getSideWithRotation( puzzle->pieces[check2Index], check2Side, check2Rotation ) == 0 ) {
-            ++numOriginalConnections;
-
-        }
     }
 
     return numOriginalConnections;
@@ -472,7 +476,7 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
                                                    {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
                                                    {0, 24, 4, 20, 0}, {0, 24, 20, 4, 0} };
     static bool pairsGenerated = false;
-    PiecePair pairs[24][2];
+    PiecePair pairs[24][2] = {-1};
     if ( !pairsGenerated ) {
         puzzle_generateOriginalPiecePairs( pairs );
         pairsGenerated = true;
