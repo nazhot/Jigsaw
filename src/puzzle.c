@@ -315,10 +315,26 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
                     break;
                 }
             }
+        } else if ( currentRow == 1 ) {
+            TripleIndex rowAbove = centerTriples[centerIndexes[0]];
+            for ( uint j = 0; j < 3; ++j ) {
+                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], TOP, row.rotations[j] ) +
+                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove.indexes[j]], BOTTOM, rowAbove.rotations[j] ) != 0 ) {
+                    valid = false;
+                    break;
+                }
+
+            }
         } else if ( currentRow == 2 ) {
+            TripleIndex rowAbove = centerTriples[centerIndexes[1]];
             for ( uint j = 0; j < 3; ++j ) {
                 if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], BOTTOM, row.rotations[j] ) +
-                     piece_getSide( puzzle->pieces[( int ) edgeSolution->bottomEdgeIndexes[j]], BOTTOM ) != 0 ) {
+                    piece_getSide( puzzle->pieces[( int ) edgeSolution->bottomEdgeIndexes[j]], BOTTOM ) != 0 ) {
+                    valid = false;
+                    break;
+                }
+                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], TOP, row.rotations[j] ) +
+                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove.indexes[j]], BOTTOM, rowAbove.rotations[j] ) != 0 ) {
                     valid = false;
                     break;
                 }
@@ -539,6 +555,7 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         printf( "\n----------------\n" );
     }
     */
+    /*
     printf( "----------------\n" );
     for ( uint i = 0; i < numTotalConfigurations; ++i ) {
         PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
@@ -548,6 +565,7 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         printf( "Original pairs: %u/40\n", numPairs );
     }
     printf( "----------------\n" );
+    */
     return numTotalConfigurations;
 }
 
