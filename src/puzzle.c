@@ -488,7 +488,7 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
             char minIndex = indexes[index] < indexes[index + 5] ? indexes[index] : indexes[index + 5];
             char maxIndex = indexes[index] > indexes[index + 5] ? indexes[index] : indexes[index + 5];
             solutionPairs[solutionIndex] = ( PiecePair ) { .indexes = { minIndex, maxIndex },
-                                                             .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
+                                                             .sides = { horizontalSides[sidesIndex][0], horizontalSides[sidesIndex][1] } };
             solutionPairs[solutionIndex].sides[0] += ( 4 - rotations[minIndex] );
             solutionPairs[solutionIndex].sides[0] %= 4;
             solutionPairs[solutionIndex].sides[1] += ( 4 - rotations[maxIndex] );
@@ -500,10 +500,10 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
 
 
     for ( uint i = 0; i < 40; ++i ) {
-        printf( "Original: %i, %i | %i, %i\n", originalPairs[i].indexes[0], originalPairs[i].sides[0],
-                                              originalPairs[i].indexes[1], originalPairs[i].sides[1] );
-        printf( "Solution: %i, %i | %i, %i\n", solutionPairs[i].indexes[0], solutionPairs[i].sides[0],
-                                              solutionPairs[i].indexes[1], solutionPairs[i].sides[1] );
+        //printf( "Original: %i, %i | %i, %i\n", originalPairs[i].indexes[0], originalPairs[i].sides[0],
+        //                                      originalPairs[i].indexes[1], originalPairs[i].sides[1] );
+        //printf( "Solution: %i, %i | %i, %i\n", solutionPairs[i].indexes[0], solutionPairs[i].sides[0],
+        //                                      solutionPairs[i].indexes[1], solutionPairs[i].sides[1] );
         for ( uint j = 0; j < 40; ++j ) {
             if ( originalPairs[i].indexes[0] == solutionPairs[j].indexes[0] &&
                  originalPairs[i].indexes[1] == solutionPairs[j].indexes[1] ) {
@@ -516,8 +516,6 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
                  
         }
     }
-    printf( "Num index connections: %u\n", numIndexConnections );
-    printf( "Num side connections: %u\n", numSideConnections );
 
     return numSideConnections;
 }
