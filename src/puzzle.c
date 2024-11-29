@@ -517,7 +517,7 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
         }
     }
 
-    return numSideConnections;
+    return numSideConnections + numIndexConnections;
 }
 
 uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
@@ -593,8 +593,11 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
     for ( uint i = 0; i < numTotalConfigurations; ++i ) {
         PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
                                                    .centers = &centerSolutions[configurations[i][1]] };
-        puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
-        puzzle_calculateOriginalConnections( puzzle, &temp, pairs );
+
+        uint numSamePairs = puzzle_calculateOriginalConnections( puzzle, &temp, pairs );
+        if ( numSamePairs < 60 ) {
+            puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
+        }
     }
     printf( "----------------\n" );
     return numTotalConfigurations;
