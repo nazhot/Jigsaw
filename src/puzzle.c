@@ -351,78 +351,8 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
     }
 }
 
-static uint puzzle_countChanges( const EdgeSolution* const edgeSolution,
-                                  const CenterSolution* const centerSolution ) {
-    const static char corners[] = { 0, 4, 24, 20 };
-    const static SideDirection verticalSides[20][2] = { { RIGHT, LEFT}, { BOTTOM, LEFT }, { BOTTOM, LEFT }, { BOTTOM, LEFT}, { LEFT, RIGHT },
-                                                        { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
-                                                        { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
-                                                        { RIGHT, LEFT }, { RIGHT, BOTTOM }, { RIGHT, BOTTOM }, { RIGHT, BOTTOM }, { LEFT, RIGHT } };
-
-    const static SideDirection horizontalSides[20][2] = { { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
-                                                          { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
-                                                          { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
-                                                          { LEFT, RIGHT }, { BOTTOM, BOTTOM }, { BOTTOM, BOTTOM }, { BOTTOM, BOTTOM }, { RIGHT, LEFT } };
-    PiecePair originalPairs[40];
-    uint originalIndex = 0;
-    PiecePair solutionPairs[40];
-    uint solutionIndex = 0;
-    uint sidesIndex = 0;
-    for ( uint col = 0; col < 4; ++col ) {
-        for ( uint row = 0; row < 5; ++row ) {
-            char index = row * 5 + col;
-            originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 1 },
-                                                             .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
-            ++sidesIndex;
-        }
-    }
-
-    sidesIndex = 0;
-    for ( uint row = 0; row < 4; ++row ) {
-        for ( uint col = 0; col < 5; ++col ) {
-            char index = row * 5 + col;
-            originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 1 },
-                                                             .sides = { horizontalSides[sidesIndex][0], horizontalSides[sidesIndex][1] } };
-            ++sidesIndex;
-        }
-    }
-
-    uint count = 0;
-    for ( uint i = 0; i < 3; ++i ) {
-        if ( edgeSolution->topEdgeIndexes[i] != i + 1 ) {
-            ++count;
-        }
-        if ( edgeSolution->leftEdgeIndexes[i] != ( i + 1 ) * 5 ) {
-            ++count;
-        }
-        if ( edgeSolution->rightEdgeIndexes[i] != ( i + 1 ) * 5 + 4 ) {
-            ++count;
-        }
-        if ( edgeSolution->bottomEdgeIndexes[i] != i + 21 ) {
-            ++count;
-        }
-        for ( uint j = 0; j < 3; ++j ) {
-            char index = ( i + 1 ) * 5 + 1 + j;
-            if ( centerSolution->indexes[i][j] != index ) {
-                ++count; 
-            }
-        }
-    }
-
-    for ( uint i = 0; i < 4; ++i ) {
-        if ( edgeSolution->cornerIndexes[i] != corners[i] ) {
-            ++count;
-        }
-    }
-    return count;
-}
-
-static void puzzle_generateOriginalPiecePairs( PiecePair pairs[24][2]) {
-}
-
 static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
-                                                 const PuzzleSolution* const solution,
-                                                 const PiecePair pairs[24][2] ) {
+                                                 const PuzzleSolution* const solution ) {
     const static char corners[] = { 0, 4, 24, 20 };
     const static SideDirection verticalSides[20][2] = { { RIGHT, LEFT}, { BOTTOM, LEFT }, { BOTTOM, LEFT }, { BOTTOM, LEFT}, { LEFT, RIGHT },
                                                         { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
@@ -525,12 +455,6 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
     const static char cornerArrangements[6][5] = { {0, 4, 20, 24, 0}, {0, 4, 24, 20, 0},
                                                    {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
                                                    {0, 24, 4, 20, 0}, {0, 24, 20, 4, 0} };
-    static bool pairsGenerated = false;
-    PiecePair pairs[24][2] = {-1};
-    if ( !pairsGenerated ) {
-        puzzle_generateOriginalPiecePairs( pairs );
-        pairsGenerated = true;
-    }
     //get the valid triplets of edges
     uint numValidEdges = 0;
     const uint maxValidEdges = 400;
@@ -552,7 +476,8 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
     }
 
     uint numTotalConfigurations = 0;
-    uint configurations[200][2]; //[0] = edge, [1] = center
+    uint maxTotalConfigurations = 300;
+    uint configurations[300][2]; //[0] = edge, [1] = center
 
     uint numCenterSolutions = 0;
     uint maxCenterSolutions = 2000;
@@ -575,7 +500,7 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
             configurations[numTotalConfigurations][0] = i;
             configurations[numTotalConfigurations][1] = j;
             ++numTotalConfigurations;
-            if ( numTotalConfigurations == 300 ) {
+            if ( numTotalConfigurations == maxTotalConfigurations ) {
                 printf( "Too many solutions\n" );
             }
         }
@@ -589,17 +514,17 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         printf( "\n----------------\n" );
     }
     */
-    printf( "----------------\n" );
+    //printf( "----------------\n" );
     for ( uint i = 0; i < numTotalConfigurations; ++i ) {
         PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
                                                    .centers = &centerSolutions[configurations[i][1]] };
 
-        uint numSamePairs = puzzle_calculateOriginalConnections( puzzle, &temp, pairs );
-        if ( numSamePairs < 60 ) {
+        uint numSamePairs = puzzle_calculateOriginalConnections( puzzle, &temp );
+        if ( numSamePairs < 40 ) {
             puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
         }
     }
-    printf( "----------------\n" );
+    //printf( "----------------\n" );
     return numTotalConfigurations;
 }
 
