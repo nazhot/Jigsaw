@@ -354,6 +354,39 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
 static uint puzzle_countChanges( const EdgeSolution* const edgeSolution,
                                   const CenterSolution* const centerSolution ) {
     const static char corners[] = { 0, 4, 24, 20 };
+    const static SideDirection verticalSides[20][2] = { { RIGHT, LEFT}, { BOTTOM, LEFT }, { BOTTOM, LEFT }, { BOTTOM, LEFT}, { LEFT, RIGHT },
+                                                        { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
+                                                        { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
+                                                        { RIGHT, LEFT }, { RIGHT, BOTTOM }, { RIGHT, BOTTOM }, { RIGHT, BOTTOM }, { LEFT, RIGHT } };
+
+    const static SideDirection horizontalSides[20][2] = { { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
+                                                          { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
+                                                          { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
+                                                          { LEFT, RIGHT }, { BOTTOM, BOTTOM }, { BOTTOM, BOTTOM }, { BOTTOM, BOTTOM }, { RIGHT, LEFT } };
+    PiecePair originalPairs[40];
+    uint originalIndex = 0;
+    PiecePair solutionPairs[40];
+    uint solutionIndex = 0;
+    uint sidesIndex = 0;
+    for ( uint col = 0; col < 4; ++col ) {
+        for ( uint row = 0; row < 5; ++row ) {
+            char index = row * 5 + col;
+            originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 1 },
+                                                             .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
+            ++sidesIndex;
+        }
+    }
+
+    sidesIndex = 0;
+    for ( uint row = 0; row < 4; ++row ) {
+        for ( uint col = 0; col < 5; ++col ) {
+            char index = row * 5 + col;
+            originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 1 },
+                                                             .sides = { horizontalSides[sidesIndex][0], horizontalSides[sidesIndex][1] } };
+            ++sidesIndex;
+        }
+    }
+
     uint count = 0;
     for ( uint i = 0; i < 3; ++i ) {
         if ( edgeSolution->topEdgeIndexes[i] != i + 1 ) {
@@ -385,81 +418,24 @@ static uint puzzle_countChanges( const EdgeSolution* const edgeSolution,
 }
 
 static void puzzle_generateOriginalPiecePairs( PiecePair pairs[24][2]) {
-    //vertical
-    char connections[40][2];
-    uint numConnections = 0;
-    for ( uint row = 0; row < 5; ++row ) {
-        for ( uint col = 0; col < 4; ++col ) {
-            char index = row * 5 + col;
-            connections[numConnections][0] = index;
-            connections[numConnections][1] = index + 1;
-            ++numConnections;
-        }
-    }
-
-    for ( uint row = 0; row < 4; ++row ) {
-        for ( uint col = 0; col < 5; ++col ) {
-            char index = row * 5 + col;
-            connections[numConnections][0] = index;
-            connections[numConnections][1] = index + 5;
-            ++numConnections;
-        }
-    }
-
-
-    pairs[0][0] = ( PiecePair ) { .index = 1, .sides = { RIGHT, LEFT } };
-    pairs[0][1] = ( PiecePair ) { .index = 5, .sides = { LEFT, RIGHT } };
-    pairs[1][0] = ( PiecePair ) { .index = 2, .sides = { RIGHT, LEFT } };
-    pairs[1][1] = ( PiecePair ) { .index = 6, .sides = { BOTTOM, TOP } };
-    pairs[2][0] = ( PiecePair ) { .index = 3, .sides = { RIGHT, LEFT } };
-    pairs[2][1] = ( PiecePair ) { .index = 7, .sides = { BOTTOM, TOP } };
-    pairs[3][0] = ( PiecePair ) { .index = 4, .sides = { RIGHT, LEFT } };
-    pairs[3][1] = ( PiecePair ) { .index = 8, .sides = { BOTTOM, TOP } };
-    pairs[4][0] = ( PiecePair ) { .index = 9, .sides = { RIGHT, LEFT } };
-
-    pairs[5][0] = ( PiecePair ) { .index = 6, .sides = { BOTTOM, LEFT } };
-    pairs[5][1] = ( PiecePair ) { .index = 10, .sides = { LEFT, RIGHT } };
-    pairs[6][0] = ( PiecePair ) { .index = 7, .sides = { RIGHT, LEFT } };
-    pairs[6][1] = ( PiecePair ) { .index = 11, .sides = { BOTTOM, TOP } };
-    pairs[7][0] = ( PiecePair ) { .index = 8, .sides = { RIGHT, LEFT } };
-    pairs[7][1] = ( PiecePair ) { .index = 12, .sides = { BOTTOM, TOP } };
-    pairs[8][0] = ( PiecePair ) { .index = 9, .sides = { RIGHT, LEFT } };
-    pairs[8][1] = ( PiecePair ) { .index = 13, .sides = { BOTTOM, TOP } };
-    pairs[9][0] = ( PiecePair ) { .index = 14, .sides = { RIGHT, LEFT } };
-
-    pairs[10][0] = ( PiecePair ) { .index = 11, .sides = { BOTTOM, LEFT } };
-    pairs[10][1] = ( PiecePair ) { .index = 15, .sides = { LEFT, RIGHT } };
-    pairs[11][0] = ( PiecePair ) { .index = 12, .sides = { RIGHT, LEFT } };
-    pairs[11][1] = ( PiecePair ) { .index = 16, .sides = { BOTTOM, TOP } };
-    pairs[12][0] = ( PiecePair ) { .index = 13, .sides = { RIGHT, LEFT } };
-    pairs[12][1] = ( PiecePair ) { .index = 17, .sides = { BOTTOM, TOP } };
-    pairs[13][0] = ( PiecePair ) { .index = 14, .sides = { RIGHT, LEFT } };
-    pairs[13][1] = ( PiecePair ) { .index = 18, .sides = { BOTTOM, TOP } };
-    pairs[14][0] = ( PiecePair ) { .index = 19, .sides = { RIGHT, LEFT } };
-
-    pairs[15][0] = ( PiecePair ) { .index = 16, .sides = { BOTTOM, LEFT } };
-    pairs[15][1] = ( PiecePair ) { .index = 20, .sides = { LEFT, RIGHT } };
-    pairs[16][0] = ( PiecePair ) { .index = 17, .sides = { RIGHT, LEFT } };
-    pairs[16][1] = ( PiecePair ) { .index = 21, .sides = { BOTTOM, TOP } };
-    pairs[17][0] = ( PiecePair ) { .index = 18, .sides = { RIGHT, LEFT } };
-    pairs[17][1] = ( PiecePair ) { .index = 22, .sides = { BOTTOM, TOP } };
-    pairs[18][0] = ( PiecePair ) { .index = 19, .sides = { RIGHT, LEFT } };
-    pairs[18][1] = ( PiecePair ) { .index = 23, .sides = { BOTTOM, TOP } };
-    pairs[19][0] = ( PiecePair ) { .index = 24, .sides = { RIGHT, LEFT } };
-
-    pairs[20][0] = ( PiecePair ) { .index = 21, .sides = { LEFT, RIGHT } };
-    pairs[21][0] = ( PiecePair ) { .index = 22, .sides = { LEFT, RIGHT } };
-    pairs[22][0] = ( PiecePair ) { .index = 23, .sides = { LEFT, RIGHT } };
-    pairs[23][0] = ( PiecePair ) { .index = 24, .sides = { LEFT, RIGHT } };
 }
 
 static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
                                                  const PuzzleSolution* const solution,
                                                  const PiecePair pairs[24][2] ) {
     const static char corners[] = { 0, 4, 24, 20 };
-    
+    const static SideDirection verticalSides[20][2] = { { RIGHT, LEFT}, { BOTTOM, LEFT }, { BOTTOM, LEFT }, { BOTTOM, LEFT}, { LEFT, RIGHT },
+                                                        { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
+                                                        { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
+                                                        { RIGHT, LEFT }, { RIGHT, BOTTOM }, { RIGHT, BOTTOM }, { RIGHT, BOTTOM }, { LEFT, RIGHT } };
 
-    uint numOriginalConnections = 0;
+    const static SideDirection horizontalSides[20][2] = { { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
+                                                          { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
+                                                          { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
+                                                          { LEFT, RIGHT }, { BOTTOM, BOTTOM }, { BOTTOM, BOTTOM }, { BOTTOM, BOTTOM }, { RIGHT, LEFT } };
+    
+    uint numIndexConnections = 0;
+    uint numSideConnections = 0;
     char indexes[25];
     char rotations[25] = {0};
     for ( uint i = 0; i < 4; ++i ) {
@@ -472,18 +448,78 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
         }
     }
 
-    for ( uint i = i; i < 3; ++i ) {
+    for ( uint i = 0; i < 3; ++i ) {
         for ( uint j = 0; j < 3; ++j ) {
-            indexes[( i + 1 ) * 5 + j + 1] = solution->centers->indexes[i][j];
-            rotations[( i + 1 ) * 5 + j + 1] = solution->centers->rotations[i][j];
+            char index = ( i + 1 ) * 5 + j + 1;
+            indexes[index] = solution->centers->indexes[i][j];
+            rotations[index] = solution->centers->rotations[i][j];
+        }
+    }
+
+    PiecePair originalPairs[40];
+    uint originalIndex = 0;
+    PiecePair solutionPairs[40];
+    uint solutionIndex = 0;
+    uint sidesIndex = 0;
+    for ( uint col = 0; col < 4; ++col ) {
+        for ( uint row = 0; row < 5; ++row ) {
+            char index = row * 5 + col;
+            originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 1 },
+                                                             .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
+            char minIndex = indexes[index] < indexes[index + 1] ? indexes[index] : indexes[index + 1];
+            char maxIndex = indexes[index] > indexes[index + 1] ? indexes[index] : indexes[index + 1];
+            solutionPairs[solutionIndex] = ( PiecePair ) { .indexes = { minIndex, maxIndex },
+                                                             .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
+            solutionPairs[solutionIndex].sides[0] += ( 4 - rotations[minIndex] );
+            solutionPairs[solutionIndex].sides[0] %= 4;
+            solutionPairs[solutionIndex].sides[1] += ( 4 - rotations[maxIndex] );
+            solutionPairs[solutionIndex].sides[1] %= 4;
+            ++solutionIndex;
+            ++sidesIndex;
+        }
+    }
+
+    sidesIndex = 0;
+    for ( uint row = 0; row < 4; ++row ) {
+        for ( uint col = 0; col < 5; ++col ) {
+            char index = row * 5 + col;
+            originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 5 },
+                                                             .sides = { horizontalSides[sidesIndex][0], horizontalSides[sidesIndex][1] } };
+            char minIndex = indexes[index] < indexes[index + 5] ? indexes[index] : indexes[index + 5];
+            char maxIndex = indexes[index] > indexes[index + 5] ? indexes[index] : indexes[index + 5];
+            solutionPairs[solutionIndex] = ( PiecePair ) { .indexes = { minIndex, maxIndex },
+                                                             .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
+            solutionPairs[solutionIndex].sides[0] += ( 4 - rotations[minIndex] );
+            solutionPairs[solutionIndex].sides[0] %= 4;
+            solutionPairs[solutionIndex].sides[1] += ( 4 - rotations[maxIndex] );
+            solutionPairs[solutionIndex].sides[1] %= 4;
+            ++solutionIndex;
+            ++sidesIndex;
         }
     }
 
 
-    for ( uint i = 0; i < 25; ++i ) {
+    for ( uint i = 0; i < 40; ++i ) {
+        printf( "Original: %i, %i | %i, %i\n", originalPairs[i].indexes[0], originalPairs[i].sides[0],
+                                              originalPairs[i].indexes[1], originalPairs[i].sides[1] );
+        printf( "Solution: %i, %i | %i, %i\n", solutionPairs[i].indexes[0], solutionPairs[i].sides[0],
+                                              solutionPairs[i].indexes[1], solutionPairs[i].sides[1] );
+        for ( uint j = 0; j < 40; ++j ) {
+            if ( originalPairs[i].indexes[0] == solutionPairs[j].indexes[0] &&
+                 originalPairs[i].indexes[1] == solutionPairs[j].indexes[1] ) {
+                ++numIndexConnections;
+                if ( originalPairs[i].sides[0] == solutionPairs[j].sides[0] &&
+                     originalPairs[i].sides[1] == solutionPairs[j].sides[1] ) {
+                    ++numSideConnections;
+                }
+            }
+                 
+        }
     }
+    printf( "Num index connections: %u\n", numIndexConnections );
+    printf( "Num side connections: %u\n", numSideConnections );
 
-    return numOriginalConnections;
+    return numSideConnections;
 }
 
 uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
@@ -555,17 +591,14 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         printf( "\n----------------\n" );
     }
     */
-    /*
     printf( "----------------\n" );
     for ( uint i = 0; i < numTotalConfigurations; ++i ) {
         PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
                                                    .centers = &centerSolutions[configurations[i][1]] };
         puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
-        uint numPairs = puzzle_calculateOriginalConnections( puzzle, &temp, pairs );
-        printf( "Original pairs: %u/40\n", numPairs );
+        puzzle_calculateOriginalConnections( puzzle, &temp, pairs );
     }
     printf( "----------------\n" );
-    */
     return numTotalConfigurations;
 }
 

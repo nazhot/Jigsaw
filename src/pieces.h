@@ -29,8 +29,8 @@ typedef struct Piece {
 } Piece;
 
 typedef struct PiecePair {
-    char index;;
-    SideDirection sides[2];
+    char indexes[2];
+    char sides[2];
 } PiecePair;
 
 
