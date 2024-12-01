@@ -83,6 +83,11 @@ void puzzle_printLayout( const Puzzle* const puzzle );
 uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqueIndexes,
                                 uint* const maxUniqueSides );
 
+void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
+                                    const uint generationSize,
+                                    const uint numGenerations,
+                                    const uint numSurvivors, const uint numChildren );
+
 /*
  * Free the given Puzzle
 */

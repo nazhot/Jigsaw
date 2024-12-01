@@ -15,6 +15,10 @@ int main( int argc, char *argv[] ) {
     }
     puzzle_free( puzzle );
 */
+
+    puzzle_findMostUniqueSolution( 6, 10000, 10, 100, 50 );
+
+/*
     for ( uint unique = 6; unique < 21; ++unique ) {
         Puzzle* puzzle = puzzle_create( unique );
         uint counts[1050] = {0};
@@ -43,6 +47,7 @@ int main( int argc, char *argv[] ) {
         printf( "----------------\n" );
         puzzle_free( puzzle );
     }
+*/
 
     return 0;
 }

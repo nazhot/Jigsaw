@@ -545,28 +545,7 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqu
     return numUniqueConfigurations;
 }
 
-void puzzle_shuffle( Puzzle* const puzzle ) {
-    uint numUniqueConnectors = puzzle->numUniqueConnectors;
-    uint numEach = 40 / numUniqueConnectors;
-    uint numLeftOver = 40 - numUniqueConnectors * numEach;
-    for ( uint i = 0; i < numUniqueConnectors; ++i ) {
-        for ( uint j = 0; j < numEach; ++j ) {
-            puzzle->connections[i * numEach + j] = i + 1;            
-            if ( rand_float() < 0.5 ) {
-                puzzle->connections[i * numEach + j] *= -1;
-            }
-        }
-    }
-
-    for ( uint i = 0; i < numLeftOver; ++i ) {
-        puzzle->connections[40  - numLeftOver + i] = rand_intBetween( 1, numUniqueConnectors + 1 );
-        if ( rand_float() < 0.5 ) {
-            puzzle->connections[40 - numLeftOver + i] *= -1;
-        }
-    }
-
-    rand_shuffle( puzzle->connections, 40, sizeof( char ) );
-
+static void puzzle_setPieces( Puzzle* const puzzle ) {
     for ( uint i = 0; i < 25; ++i ) {
         if ( i == 0 ) {
             puzzle->pieces[0] = piece_create( CORNER, i, 0, puzzle->connections[0],
@@ -608,6 +587,32 @@ void puzzle_shuffle( Puzzle* const puzzle ) {
     }
 }
 
+void puzzle_shuffle( Puzzle* const puzzle ) {
+    uint numUniqueConnectors = puzzle->numUniqueConnectors;
+    uint numEach = 40 / numUniqueConnectors;
+    uint numLeftOver = 40 - numUniqueConnectors * numEach;
+    for ( uint i = 0; i < numUniqueConnectors; ++i ) {
+        for ( uint j = 0; j < numEach; ++j ) {
+            puzzle->connections[i * numEach + j] = i + 1;            
+            if ( rand_float() < 0.5 ) {
+                puzzle->connections[i * numEach + j] *= -1;
+            }
+        }
+    }
+
+    for ( uint i = 0; i < numLeftOver; ++i ) {
+        puzzle->connections[40  - numLeftOver + i] = rand_intBetween( 1, numUniqueConnectors + 1 );
+        if ( rand_float() < 0.5 ) {
+            puzzle->connections[40 - numLeftOver + i] *= -1;
+        }
+    }
+
+    rand_shuffle( puzzle->connections, 40, sizeof( char ) );
+    
+    puzzle_setPieces( puzzle );
+
+}
+
 Puzzle* puzzle_create( const uint numUniqueConnectors ) {
     Puzzle* puzzle = malloc( sizeof( Puzzle ) );
     if ( !puzzle ) {
@@ -620,6 +625,82 @@ Puzzle* puzzle_create( const uint numUniqueConnectors ) {
 
     return puzzle;
 }
+
+void puzzle_mutate( Puzzle* const destPuzzle, const Puzzle* const srcPuzzle,
+                    const uint minMutations, const uint maxMutations ) {
+    memcpy( destPuzzle, srcPuzzle, sizeof( Puzzle ) );
+    uint numMutations = rand_intBetween( minMutations, maxMutations + 1 );
+    uint firstIndex = 0;
+    uint secondIndex = 0;
+    while ( numMutations ) {
+        while ( firstIndex == secondIndex ) {
+            firstIndex = rand_index( 40 );
+            secondIndex = rand_index( 40 );
+        }
+        char temp = destPuzzle->connections[firstIndex];
+        destPuzzle->connections[firstIndex] = destPuzzle->connections[secondIndex];
+        destPuzzle->connections[secondIndex] = temp;
+        --numMutations;
+    }
+    puzzle_setPieces( destPuzzle );
+}
+
+typedef struct PuzzleSum {
+    Puzzle* puzzle;
+    uint sum;
+} PuzzleSum;
+
+static int puzzleSumSortDescending( const void* p1, const void* p2 ) {
+    PuzzleSum* puzzleSum1 = ( PuzzleSum* ) p1;
+    PuzzleSum* puzzleSum2 = ( PuzzleSum* ) p2;
+    return puzzleSum2->sum - puzzleSum1->sum;
+}
+
+void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
+                                    const uint generationSize,
+                                    const uint numGenerations,
+                                    const uint maxSurvivors, const uint numChildren ) {
+    PuzzleSum* generation = malloc( sizeof( PuzzleSum ) * generationSize );
+    for ( uint i = 0; i < generationSize; ++i ) {
+        generation[i].puzzle = puzzle_create( numUniqueConnections ); 
+        generation[i].sum = 0;
+    }
+
+     
+    for ( uint i = 0; i < numGenerations; ++i ) {
+        printf( "Starting Generation: %u/%u\n", i + 1, numGenerations );
+        uint numSurvivors = 0;
+        for ( uint j = 0; j < generationSize; ++j ) {
+            uint maxUniqueIndexes = 0;
+            uint maxUniqueSides = 0;
+            uint count = puzzle_findValidSolutions( generation[j].puzzle, &maxUniqueIndexes,
+                                                        &maxUniqueSides );
+            if ( count != 2 ) {
+                generation[j].sum = 0;
+                continue;
+            }
+            uint sum = maxUniqueIndexes + maxUniqueSides;
+
+            generation[j].sum = sum;
+        }
+
+        qsort( generation, generationSize, sizeof( PuzzleSum ), puzzleSumSortDescending );
+        printf( "Best Sum of Uniques: %u\n", generation[0].sum );
+
+        uint index = numSurvivors;
+        for ( uint j = 0; j < numSurvivors; ++j ) {
+            for ( uint k = 0; k < numChildren; ++k ) {
+                puzzle_mutate( generation[index].puzzle, generation[j].puzzle, 0, 5 );
+                ++index;
+            }
+            puzzle_shuffle( generation[j].puzzle );
+        }
+        for ( uint j = index; j < generationSize; ++j ) {
+            puzzle_shuffle( generation[j].puzzle );
+        }
+    }
+}
+
 
 void puzzle_printLayout( const Puzzle* const puzzle ) {
     for ( uint i = 0; i < 25; ++i ) {
