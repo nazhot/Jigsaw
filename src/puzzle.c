@@ -365,8 +365,10 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
     }
 }
 
-static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
-                                                 const PuzzleSolution* const solution ) {
+static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
+                                                 const PuzzleSolution* const solution,
+                                                 uint* const numIndexConnections,
+                                                 uint* const numSideConnections ) {
     const static int corners[] = { 0, 4, 24, 20 };
     const static SideDirection verticalSides[20][2] = { { RIGHT, LEFT}, { BOTTOM, LEFT }, { BOTTOM, LEFT }, { BOTTOM, LEFT}, { LEFT, RIGHT },
                                                         { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
@@ -378,8 +380,8 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
                                                           { LEFT, RIGHT }, { BOTTOM, TOP }, { BOTTOM, TOP }, { BOTTOM, TOP }, { RIGHT, LEFT },
                                                           { LEFT, RIGHT }, { BOTTOM, BOTTOM }, { BOTTOM, BOTTOM }, { BOTTOM, BOTTOM }, { RIGHT, LEFT } };
     
-    uint numIndexConnections = 0;
-    uint numSideConnections = 0;
+    *numIndexConnections = 0;
+    *numSideConnections = 0;
     char indexes[25];
     char rotations[25] = {0};
     for ( uint i = 0; i < 4; ++i ) {
@@ -447,17 +449,15 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
         for ( uint j = 0; j < 40; ++j ) {
             if ( originalPairs[i].indexes[0] == solutionPairs[j].indexes[0] &&
                  originalPairs[i].indexes[1] == solutionPairs[j].indexes[1] ) {
-                ++numIndexConnections;
+                ++*numIndexConnections;
                 if ( originalPairs[i].sides[0] == solutionPairs[j].sides[0] &&
                      originalPairs[i].sides[1] == solutionPairs[j].sides[1] ) {
-                    ++numSideConnections;
+                    ++*numSideConnections;
                 }
                 break;      
             }
         }
     }
-
-    return numSideConnections + numIndexConnections;
 }
 
 uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
@@ -517,8 +517,12 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
                                                    .centers = &centerSolutions[configurations[i][1]] };
 
-        uint numSamePairs = puzzle_calculateOriginalConnections( puzzle, &temp );
-        if ( numSamePairs < 40 ) {
+        uint numIndexConnections = 0;
+        uint numSideConnections = 0;
+        puzzle_calculateOriginalConnections( puzzle, &temp,
+                                             &numIndexConnections,
+                                             &numSideConnections );
+        if ( numIndexConnections < 10 ) {
             puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
         }
     }
