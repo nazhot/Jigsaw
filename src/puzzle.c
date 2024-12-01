@@ -444,10 +444,6 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
 
 
     for ( uint i = 0; i < 40; ++i ) {
-        //printf( "Original: %i, %i | %i, %i\n", originalPairs[i].indexes[0], originalPairs[i].sides[0],
-        //                                      originalPairs[i].indexes[1], originalPairs[i].sides[1] );
-        //printf( "Solution: %i, %i | %i, %i\n", solutionPairs[i].indexes[0], solutionPairs[i].sides[0],
-        //                                      solutionPairs[i].indexes[1], solutionPairs[i].sides[1] );
         for ( uint j = 0; j < 40; ++j ) {
             if ( originalPairs[i].indexes[0] == solutionPairs[j].indexes[0] &&
                  originalPairs[i].indexes[1] == solutionPairs[j].indexes[1] ) {
@@ -456,8 +452,8 @@ static uint puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
                      originalPairs[i].sides[1] == solutionPairs[j].sides[1] ) {
                     ++numSideConnections;
                 }
+                break;      
             }
-                 
         }
     }
 
@@ -516,16 +512,7 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
             }
         }
     }
-    /*
-    if ( numTotalConfigurations > 1000 ) {
-        printf( "----------------\n" );
-        for ( uint i = 0; i < numTotalConfigurations; ++i ) {
-            puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
-        }
-        printf( "\n----------------\n" );
-    }
-    */
-    //printf( "----------------\n" );
+
     for ( uint i = 0; i < numTotalConfigurations; ++i ) {
         PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
                                                    .centers = &centerSolutions[configurations[i][1]] };
@@ -535,7 +522,7 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
             puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
         }
     }
-    //printf( "----------------\n" );
+
     return numTotalConfigurations;
 }
 
