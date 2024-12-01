@@ -11,17 +11,12 @@
  *
  * The edge/corner/center arrays point to the Pieces with the pieces array, and
  * are used to easily cycle through those specific types when solving a Puzzle.
- * TODO: update the structure to remove those arrays, functions can probably have
- * a const static array of the indexes that align with those types
  *
  * TODO: look at removing numUniqueConnectors, only really used in the initial
  * creation
 */
 typedef struct Puzzle {
     Piece pieces[25];
-    Piece* edgePieces[12];
-    Piece* cornerPieces[4];
-    Piece* centerPieces[9];
 
     char connections[40]; //[0, 19] vertical connections, top to bottom, 
                           //[20, 39] horizontal connections, left to right
