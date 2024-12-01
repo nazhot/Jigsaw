@@ -80,7 +80,8 @@ void puzzle_printLayout( const Puzzle* const puzzle );
  *   
  * - Go through all the PuzzleSolutions and do what you want with them
 */
-uint puzzle_findValidSolutions( const Puzzle* const puzzle );
+uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqueIndexes,
+                                uint* const maxUniqueSides );
 
 /*
  * Free the given Puzzle

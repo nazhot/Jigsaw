@@ -20,7 +20,10 @@ int main( int argc, char *argv[] ) {
         uint counts[1050] = {0};
         for ( uint i = 0; i < 1000000; ++i ) {
             //while ( true ) {
-            uint count = puzzle_findValidSolutions( puzzle );
+            uint maxUniqueIndexes = 0;
+            uint maxUniqueSides = 0;
+            uint count = puzzle_findValidSolutions( puzzle, &maxUniqueIndexes,
+                                                    &maxUniqueSides );
             ++counts[count];
             puzzle_shuffle( puzzle );
         }

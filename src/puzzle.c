@@ -460,7 +460,8 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
     }
 }
 
-uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
+uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqueIndexes,
+                                uint* const maxUniqueSides ) {
     //only 6 valid arangements of corners (top left, top right, bottom right, bottom left)
     const static char cornerArrangements[6][5] = { {0, 4, 20, 24, 0}, {0, 4, 24, 20, 0},
                                                    {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
@@ -516,7 +517,8 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
     //start at one because the original puzzle is valid, but won't count for this
     uint numUniqueConfigurations = 1; //if all of the indexes are the same, don't
                                      //count it as a valid configuration
-
+    *maxUniqueIndexes = 0;
+    *maxUniqueSides = 0;
     for ( uint i = 0; i < numTotalConfigurations; ++i ) {
         PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
                                                    .centers = &centerSolutions[configurations[i][1]] };
@@ -528,6 +530,12 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
                                              &numSideConnections );
         if ( numIndexConnections < 40 ) {
             ++numUniqueConfigurations;
+            if ( ( 40 - numIndexConnections ) > *maxUniqueIndexes ) {
+                *maxUniqueIndexes = 40 - numIndexConnections;
+            }
+            if ( ( 40 - numSideConnections ) > *maxUniqueSides ) {
+                *maxUniqueSides = 40 - numSideConnections;
+            }
         }
         if ( numIndexConnections < 10 ) {
             puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
