@@ -513,6 +513,10 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         }
     }
 
+    //start at one because the original puzzle is valid, but won't count for this
+    uint numUniqueConfigurations = 1; //if all of the indexes are the same, don't
+                                     //count it as a valid configuration
+
     for ( uint i = 0; i < numTotalConfigurations; ++i ) {
         PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
                                                    .centers = &centerSolutions[configurations[i][1]] };
@@ -522,12 +526,15 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle ) {
         puzzle_calculateOriginalConnections( puzzle, &temp,
                                              &numIndexConnections,
                                              &numSideConnections );
+        if ( numIndexConnections < 40 ) {
+            ++numUniqueConfigurations;
+        }
         if ( numIndexConnections < 10 ) {
             puzzle_printSolution( &edgeSolutions[configurations[i][0]], &centerSolutions[configurations[i][1]] );
         }
     }
 
-    return numTotalConfigurations;
+    return numUniqueConfigurations;
 }
 
 void puzzle_shuffle( Puzzle* const puzzle ) {
