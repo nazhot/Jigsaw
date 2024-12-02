@@ -86,7 +86,8 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqu
 void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
                                     const uint generationSize,
                                     const uint numGenerations,
-                                    const uint numSurvivors, const uint numChildren );
+                                    const uint numSurvivors, const uint numChildren,
+                                    const uint minMutations, const uint maxMutations );
 
 /*
  * Free the given Puzzle

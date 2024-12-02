@@ -6,17 +6,29 @@
 
 int main( int argc, char *argv[] ) {
 
-    srand( time( NULL ) );
 /*
+    srand( time( NULL ) );
     Puzzle *puzzle = puzzle_create( 6 );
-    for ( uint i = 0; i < 5; ++i ) {
-        puzzle_findValidSolutions( puzzle );
+    for ( uint i = 0; i < 500; ++i ) {
+        uint numIndexConnections = 0;
+        uint numSideConnections = 0;
+        uint count = puzzle_findValidSolutions( puzzle, &numIndexConnections, &numSideConnections );
+        if ( count == 1 ) {
+            puzzle_shuffle( puzzle );
+            continue;
+        }
+        for ( uint j = 0; j < 40; ++j ) {
+            if ( j ) {
+                printf( ", " );
+            }
+            printf( "%i", puzzle->connections[j] );
+        }
+        printf( "\n" );
         puzzle_shuffle( puzzle );
     }
     puzzle_free( puzzle );
 */
-
-    puzzle_findMostUniqueSolution( 6, 10000, 10, 100, 50 );
+    puzzle_findMostUniqueSolution( 20, 100000, 1000, 100, 500, 1, 10 );
 
 /*
     for ( uint unique = 6; unique < 21; ++unique ) {
