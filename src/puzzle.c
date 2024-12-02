@@ -678,7 +678,8 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
     uint bestComparison = 0;
     bool foundBestSides = false;
     for ( uint i = 0; i < numGenerations; ++i ) {
-        printf( "Starting Generation: %u/%u\n", i + 1, numGenerations );
+        uint bestInGeneration = 0;
+        PuzzleSolution best;
         uint totalSum = 0;
         for ( uint j = 0; j < generationSize; ++j ) {
             uint maxUniqueIndexes = 0;
@@ -697,12 +698,9 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
             }
             uint sum = maxUniqueSides + maxUniqueIndexes;
             uint comparison = foundBestSides ? sum : maxUniqueSides;
-            if ( comparison > bestComparison ) {
-                puzzle_printSolution( &solutions[0] );
-                bestComparison = comparison;
-                if ( !foundBestSides && comparison == 40 ) {
-                    foundBestSides = true;
-                }
+            if ( comparison > bestInGeneration ) {
+                bestInGeneration = comparison;
+                best = solutions[0];
             }
             totalSum += sum;
 
@@ -716,23 +714,32 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
         } else {
             qsort( generation, generationSize, sizeof( PuzzleSum ), puzzleSidesSortDescending );
         }
-        printf( "Best Sum of Uniques: %u\n", generation[0].sum );
-        printf( "Unique Sides: %u\n", generation[0].numUniqueSides );
-        printf( "Unique Indexes: %u\n", generation[0].numUniqueIndexes );
-        printf( "Average: %.2f\n", totalSum * 1.0 / generationSize ); 
-        float last100Average = 0;
-        for ( uint i = 0; i < 100; ++i ) {
-            last100Average += generation[i].sum;
-        }
-        last100Average /= 100.0;
-        printf( "Last 100 Average: %.2f\n", last100Average );
-        for ( uint j = 0; j < 40; ++j ) {
-            if ( j ) {
-                printf( ", " );
+        uint comparison = foundBestSides ? generation[0].sum : generation[0].numUniqueSides;
+        if ( comparison > bestComparison || generation[0].numUniqueSides == 40 ) {
+            bestComparison = comparison;
+            if ( !foundBestSides && comparison == 40 ) {
+                foundBestSides = true;
             }
-            printf( "%i", generation[0].puzzle->connections[j] );
+            printf( "Starting Generation: %u/%u\n", i + 1, numGenerations );
+            puzzle_printSolution( &best );
+            printf( "Best Sum of Uniques: %u\n", generation[0].sum );
+            printf( "Unique Sides: %u\n", generation[0].numUniqueSides );
+            printf( "Unique Indexes: %u\n", generation[0].numUniqueIndexes );
+            printf( "Average: %.2f\n", totalSum * 1.0 / generationSize ); 
+            float last100Average = 0;
+            for ( uint i = 0; i < 100; ++i ) {
+                last100Average += generation[i].sum;
+            }
+            last100Average /= 100.0;
+            printf( "Last 100 Average: %.2f\n", last100Average );
+            for ( uint j = 0; j < 40; ++j ) {
+                if ( j ) {
+                    printf( ", " );
+                }
+                printf( "%i", generation[0].puzzle->connections[j] );
+            }
+            printf( "\n" );
         }
-        printf( "\n" );
 
         uint index = numSurvivors;
         for ( uint j = 0; j < numSurvivors; ++j ) {
