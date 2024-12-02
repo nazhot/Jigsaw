@@ -638,6 +638,11 @@ void puzzle_mutate( Puzzle* const destPuzzle, const Puzzle* const srcPuzzle,
         destPuzzle->connections[firstIndex] = destPuzzle->connections[secondIndex];
         destPuzzle->connections[secondIndex] = temp;
         --numMutations;
+        if ( numMutations == 0 ) {
+            if ( memcmp( srcPuzzle->connections, destPuzzle->connections, sizeof( char ) * 40 ) == 0 ) {
+                numMutations = 1;
+            }
+        }
     }
     puzzle_setPieces( destPuzzle );
 }
@@ -677,7 +682,7 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
                 generation[j].sum = 0;
                 continue;
             }
-            uint sum = maxUniqueIndexes + maxUniqueSides;
+            uint sum = maxUniqueSides;
             totalSum += sum;
 
             generation[j].sum = sum;
@@ -686,6 +691,12 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
         qsort( generation, generationSize, sizeof( PuzzleSum ), puzzleSumSortDescending );
         printf( "Best Sum of Uniques: %u\n", generation[0].sum );
         printf( "Average: %.2f\n", totalSum * 1.0 / generationSize ); 
+        float last100Average = 0;
+        for ( uint i = 0; i < 100; ++i ) {
+            last100Average += generation[i].sum;
+        }
+        last100Average /= 100.0;
+        printf( "Last 100 Average: %.2f\n", last100Average );
         for ( uint j = 0; j < 40; ++j ) {
             if ( j ) {
                 printf( ", " );

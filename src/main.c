@@ -28,7 +28,7 @@ int main( int argc, char *argv[] ) {
     }
     puzzle_free( puzzle );
 */
-    puzzle_findMostUniqueSolution( 20, 100000, 1000, 100, 500, 1, 10 );
+    puzzle_findMostUniqueSolution( 20, 10000, 100000, 40, 50, 1, 10 );
 
 /*
     for ( uint unique = 6; unique < 21; ++unique ) {
