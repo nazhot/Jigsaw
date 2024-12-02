@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include "pieces.h"
 
+typedef struct PuzzleSolution {
+    char indexes[25];
+    char rotations[25];
+} PuzzleSolution;
 
 /*
  * Holds the information about a Puzzle instance. 
@@ -80,8 +84,10 @@ void puzzle_printLayout( const Puzzle* const puzzle );
  *   
  * - Go through all the PuzzleSolutions and do what you want with them
 */
-uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqueIndexes,
-                                uint* const maxUniqueSides );
+void puzzle_findValidSolutions( const Puzzle* const puzzle,
+                                PuzzleSolution* const otherSolutions,
+                                uint* const numOtherSolutions, const uint maxOtherSolutions,
+                                uint* const maxUniqueIndexes, uint* const maxUniqueSides );
 
 void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
                                     const uint generationSize,

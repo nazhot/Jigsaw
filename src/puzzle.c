@@ -25,11 +25,6 @@ typedef struct CenterSolution {
     char rotations[3][3];
 } CenterSolution;
 
-typedef struct PuzzleSolution {
-    CenterSolution* centers;
-    EdgeSolution* edges;
-} PuzzleSolution;
-
 typedef struct PiecePair {
     char indexes[2];
     char sides[2];
@@ -365,11 +360,33 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, char centerIndexes[3],
     }
 }
 
+static void puzzle_convertEdgeCenterToSolution( PuzzleSolution* const solution,
+                                                const EdgeSolution* const edgeSolution,
+                                                const CenterSolution* const centerSolution ) {
+    const static int corners[] = { 0, 4, 24, 20 };
+    for ( uint i = 0; i < 4; ++i ) {
+        solution->indexes[corners[i]] = edgeSolution->cornerIndexes[i];
+        if ( i < 3 ) {
+            solution->indexes[( i + 1 ) * 5] = edgeSolution->leftEdgeIndexes[i];
+            solution->indexes[( i + 1 ) * 5 + 4]= edgeSolution->rightEdgeIndexes[i];
+            solution->indexes[i + 1] = edgeSolution->topEdgeIndexes[i];
+            solution->indexes[i + 21] = edgeSolution->bottomEdgeIndexes[i];
+        }
+    }
+
+    for ( uint i = 0; i < 3; ++i ) {
+        for ( uint j = 0; j < 3; ++j ) {
+            int index = ( i + 1 ) * 5 + j + 1;
+            solution->indexes[index] = centerSolution->indexes[i][j];
+            solution->rotations[index] = centerSolution->rotations[i][j];
+        }
+    }
+}
+
 static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
                                                  const PuzzleSolution* const solution,
                                                  uint* const numIndexConnections,
                                                  uint* const numSideConnections ) {
-    const static int corners[] = { 0, 4, 24, 20 };
     const static SideDirection verticalSides[20][2] = { { RIGHT, LEFT}, { BOTTOM, LEFT }, { BOTTOM, LEFT }, { BOTTOM, LEFT}, { LEFT, RIGHT },
                                                         { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
                                                         { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { RIGHT, LEFT }, { LEFT, RIGHT },
@@ -382,25 +399,6 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
     
     *numIndexConnections = 0;
     *numSideConnections = 0;
-    char indexes[25];
-    char rotations[25] = {0};
-    for ( uint i = 0; i < 4; ++i ) {
-        indexes[corners[i]] = solution->edges->cornerIndexes[i];
-        if ( i < 3 ) {
-            indexes[( i + 1 ) * 5] = solution->edges->leftEdgeIndexes[i];
-            indexes[( i + 1 ) * 5 + 4]= solution->edges->rightEdgeIndexes[i];
-            indexes[i + 1] = solution->edges->topEdgeIndexes[i];
-            indexes[i + 21] = solution->edges->bottomEdgeIndexes[i];
-        }
-    }
-
-    for ( uint i = 0; i < 3; ++i ) {
-        for ( uint j = 0; j < 3; ++j ) {
-            int index = ( i + 1 ) * 5 + j + 1;
-            indexes[index] = solution->centers->indexes[i][j];
-            rotations[index] = solution->centers->rotations[i][j];
-        }
-    }
 
     PiecePair originalPairs[40];
     uint originalIndex = 0;
@@ -412,13 +410,13 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
             int index = row * 5 + col;
             originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 1 },
                                                              .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
-            int minIndex = indexes[index] < indexes[index + 1] ? indexes[index] : indexes[index + 1];
-            int maxIndex = indexes[index] > indexes[index + 1] ? indexes[index] : indexes[index + 1];
+            int minIndex = solution->indexes[index] < solution->indexes[index + 1] ? solution->indexes[index] : solution->indexes[index + 1];
+            int maxIndex = solution->indexes[index] > solution->indexes[index + 1] ? solution->indexes[index] : solution->indexes[index + 1];
             solutionPairs[solutionIndex] = ( PiecePair ) { .indexes = { minIndex, maxIndex },
                                                              .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
-            solutionPairs[solutionIndex].sides[0] += ( 4 - rotations[minIndex] );
+            solutionPairs[solutionIndex].sides[0] += ( 4 - solution->rotations[minIndex] );
             solutionPairs[solutionIndex].sides[0] %= 4;
-            solutionPairs[solutionIndex].sides[1] += ( 4 - rotations[maxIndex] );
+            solutionPairs[solutionIndex].sides[1] += ( 4 - solution->rotations[maxIndex] );
             solutionPairs[solutionIndex].sides[1] %= 4;
             ++solutionIndex;
             ++sidesIndex;
@@ -431,13 +429,13 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
             int index = row * 5 + col;
             originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 5 },
                                                              .sides = { horizontalSides[sidesIndex][0], horizontalSides[sidesIndex][1] } };
-            int minIndex = indexes[index] < indexes[index + 5] ? indexes[index] : indexes[index + 5];
-            int maxIndex = indexes[index] > indexes[index + 5] ? indexes[index] : indexes[index + 5];
+            int minIndex = solution->indexes[index] < solution->indexes[index + 5] ? solution->indexes[index] : solution->indexes[index + 5];
+            int maxIndex = solution->indexes[index] > solution->indexes[index + 5] ? solution->indexes[index] : solution->indexes[index + 5];
             solutionPairs[solutionIndex] = ( PiecePair ) { .indexes = { minIndex, maxIndex },
                                                              .sides = { horizontalSides[sidesIndex][0], horizontalSides[sidesIndex][1] } };
-            solutionPairs[solutionIndex].sides[0] += ( 4 - rotations[minIndex] );
+            solutionPairs[solutionIndex].sides[0] += ( 4 - solution->rotations[minIndex] );
             solutionPairs[solutionIndex].sides[0] %= 4;
-            solutionPairs[solutionIndex].sides[1] += ( 4 - rotations[maxIndex] );
+            solutionPairs[solutionIndex].sides[1] += ( 4 - solution->rotations[maxIndex] );
             solutionPairs[solutionIndex].sides[1] %= 4;
             ++solutionIndex;
             ++sidesIndex;
@@ -460,8 +458,10 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
     }
 }
 
-uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqueIndexes,
-                                uint* const maxUniqueSides ) {
+void puzzle_findValidSolutions( const Puzzle* const puzzle,
+                                PuzzleSolution* const otherSolutions,
+                                uint* const numOtherSolutions, const uint maxOtherSolutions,
+                                uint* const maxUniqueIndexes, uint* const maxUniqueSides ) {
     //only 6 valid arangements of corners (top left, top right, bottom right, bottom left)
     const static char cornerArrangements[6][5] = { {0, 4, 20, 24, 0}, {0, 4, 24, 20, 0},
                                                    {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
@@ -488,7 +488,7 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqu
 
     uint numTotalConfigurations = 0;
     uint maxTotalConfigurations = 300;
-    uint configurations[300][2]; //[0] = edge, [1] = center
+    uint configurations[maxTotalConfigurations][2]; //[0] = edge, [1] = center
 
     uint numCenterSolutions = 0;
     uint maxCenterSolutions = 2000;
@@ -514,32 +514,33 @@ uint puzzle_findValidSolutions( const Puzzle* const puzzle, uint* const maxUniqu
         }
     }
 
-    //start at one because the original puzzle is valid, but won't count for this
-    uint numUniqueConfigurations = 1; //if all of the indexes are the same, don't
-                                     //count it as a valid configuration
+    *numOtherSolutions = 0;
     *maxUniqueIndexes = 0;
     *maxUniqueSides = 0;
     for ( uint i = 0; i < numTotalConfigurations; ++i ) {
-        PuzzleSolution temp = ( PuzzleSolution ) { .edges = &edgeSolutions[configurations[i][0]],
-                                                   .centers = &centerSolutions[configurations[i][1]] };
-
+        PuzzleSolution temp;
+        puzzle_convertEdgeCenterToSolution( &temp, &edgeSolutions[configurations[i][0]],
+                                            &centerSolutions[configurations[i][1]] );
         uint numIndexConnections = 0;
         uint numSideConnections = 0;
         puzzle_calculateOriginalConnections( puzzle, &temp,
                                              &numIndexConnections,
                                              &numSideConnections );
         if ( numIndexConnections < 40 ) {
-            ++numUniqueConfigurations;
+            otherSolutions[*numOtherSolutions] = temp;
+            ++*numOtherSolutions;;
             if ( ( 40 - numIndexConnections ) > *maxUniqueIndexes ) {
                 *maxUniqueIndexes = 40 - numIndexConnections;
             }
             if ( ( 40 - numSideConnections ) > *maxUniqueSides ) {
                 *maxUniqueSides = 40 - numSideConnections;
             }
+            if ( *numOtherSolutions == maxOtherSolutions ) {
+                fprintf( stderr, "Too many total solutions\n" );
+                exit( 1 );
+            }
         }
     }
-
-    return numUniqueConfigurations;
 }
 
 static void puzzle_setPieces( Puzzle* const puzzle ) {
@@ -573,7 +574,6 @@ static void puzzle_setPieces( Puzzle* const puzzle ) {
                                               -puzzle->connections[i + 15],
                                               puzzle->connections[( i - 20 ) * 5 + 4] );
         } else {
-
             uint row = i / 5;
             uint col = i % 5;
             puzzle->pieces[i] = piece_create( CENTER, i, -puzzle->connections[i + 15],
@@ -585,9 +585,10 @@ static void puzzle_setPieces( Puzzle* const puzzle ) {
 }
 
 void puzzle_shuffle( Puzzle* const puzzle ) {
-    uint numUniqueConnectors = puzzle->numUniqueConnectors;
-    uint numEach = 40 / numUniqueConnectors;
-    uint numLeftOver = 40 - numUniqueConnectors * numEach;
+    const uint numUniqueConnectors = puzzle->numUniqueConnectors;
+    const uint numEach = 40 / numUniqueConnectors;
+    const uint numLeftOver = 40 - numUniqueConnectors * numEach;
+
     for ( uint i = 0; i < numUniqueConnectors; ++i ) {
         for ( uint j = 0; j < numEach; ++j ) {
             puzzle->connections[i * numEach + j] = i + 1;            
@@ -607,7 +608,6 @@ void puzzle_shuffle( Puzzle* const puzzle ) {
     rand_shuffle( puzzle->connections, 40, sizeof( char ) );
     
     puzzle_setPieces( puzzle );
-
 }
 
 Puzzle* puzzle_create( const uint numUniqueConnectors ) {
@@ -670,19 +670,27 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
     }
 
      
+    uint bestUniqueSides = 0;
     for ( uint i = 0; i < numGenerations; ++i ) {
         printf( "Starting Generation: %u/%u\n", i + 1, numGenerations );
         uint totalSum = 0;
         for ( uint j = 0; j < generationSize; ++j ) {
             uint maxUniqueIndexes = 0;
             uint maxUniqueSides = 0;
-            uint count = puzzle_findValidSolutions( generation[j].puzzle, &maxUniqueIndexes,
-                                                        &maxUniqueSides );
-            if ( count != 2 ) {
+            uint maxOtherSolutions = 100;
+            uint numOtherSolutions = 0;
+            PuzzleSolution solutions[maxOtherSolutions];
+            puzzle_findValidSolutions( generation[j].puzzle, solutions,
+                                       &numOtherSolutions, maxOtherSolutions,
+                                       &maxUniqueIndexes, &maxUniqueSides );
+            if ( numOtherSolutions != 1 ) {
                 generation[j].sum = 0;
                 continue;
             }
             uint sum = maxUniqueSides;
+            if ( sum > bestUniqueSides ) {
+                bestUniqueSides = sum;
+            }
             totalSum += sum;
 
             generation[j].sum = sum;
