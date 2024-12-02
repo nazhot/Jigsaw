@@ -31,29 +31,20 @@ typedef struct PiecePair {
 } PiecePair;
 
 
-static void puzzle_printSolution( const EdgeSolution* const edgeSolution,
-                                  const CenterSolution* const centerSolution ) {
-    printf( "%02i %02i %02i %02i %02i\n", edgeSolution->cornerIndexes[0],
-                                          edgeSolution->topEdgeIndexes[0],
-                                          edgeSolution->topEdgeIndexes[1],
-                                          edgeSolution->topEdgeIndexes[2],
-                                          edgeSolution->cornerIndexes[1] );
-    for ( uint i = 0; i < 3; ++i ) {
-        printf( "%02i %02i %02i %02i %02i\n", edgeSolution->leftEdgeIndexes[i],
-                                              centerSolution->indexes[i][0],
-                                              centerSolution->indexes[i][1],
-                                              centerSolution->indexes[i][2],
-                                              edgeSolution->rightEdgeIndexes[i] );
+static void puzzle_printSolution( const PuzzleSolution* const solution ) {
+    for ( uint i = 0; i < 5; ++i ) {
+        uint index = i * 5;
+        printf( "%02i %02i %02i %02i %02i\n", solution->indexes[index + 0],
+                                              solution->indexes[index + 1],
+                                              solution->indexes[index + 2],
+                                              solution->indexes[index + 3],
+                                              solution->indexes[index + 4] );
     }
-    printf( "%02i %02i %02i %02i %02i\n", edgeSolution->cornerIndexes[3],
-                                          edgeSolution->bottomEdgeIndexes[0],
-                                          edgeSolution->bottomEdgeIndexes[1],
-                                          edgeSolution->bottomEdgeIndexes[2],
-                                          edgeSolution->cornerIndexes[2] );
     printf( "Rotations:\n" );
     for ( uint i = 0; i < 3; ++i ) {
-        printf( "%i %i %i\n", centerSolution->rotations[i][0], centerSolution->rotations[i][1],
-                              centerSolution->rotations[i][2] );
+        uint index = 6 + ( i * 5 );
+        printf( "%i %i %i\n", solution->rotations[index], solution->rotations[index + 1],
+                              solution->rotations[index + 2] );
     }
 }
 
@@ -364,6 +355,11 @@ static void puzzle_convertEdgeCenterToSolution( PuzzleSolution* const solution,
                                                 const EdgeSolution* const edgeSolution,
                                                 const CenterSolution* const centerSolution ) {
     const static int corners[] = { 0, 4, 24, 20 };
+
+    for ( uint i = 0; i < 25; ++i ) {
+        solution->rotations[i] = 0;
+    }
+
     for ( uint i = 0; i < 4; ++i ) {
         solution->indexes[corners[i]] = edgeSolution->cornerIndexes[i];
         if ( i < 3 ) {
@@ -650,12 +646,20 @@ void puzzle_mutate( Puzzle* const destPuzzle, const Puzzle* const srcPuzzle,
 typedef struct PuzzleSum {
     Puzzle* puzzle;
     uint sum;
+    uint numUniqueSides;
+    uint numUniqueIndexes;
 } PuzzleSum;
 
 static int puzzleSumSortDescending( const void* p1, const void* p2 ) {
     PuzzleSum* puzzleSum1 = ( PuzzleSum* ) p1;
     PuzzleSum* puzzleSum2 = ( PuzzleSum* ) p2;
     return puzzleSum2->sum - puzzleSum1->sum;
+}
+
+static int puzzleSidesSortDescending( const void* p1, const void* p2 ) {
+    PuzzleSum* puzzleSum1 = ( PuzzleSum* ) p1;
+    PuzzleSum* puzzleSum2 = ( PuzzleSum* ) p2;
+    return puzzleSum2->numUniqueSides - puzzleSum1->numUniqueSides;
 }
 
 void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
@@ -670,7 +674,9 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
     }
 
      
-    uint bestUniqueSides = 0;
+    uint bestUniqueSums = 0;
+    uint bestComparison = 0;
+    bool foundBestSides = false;
     for ( uint i = 0; i < numGenerations; ++i ) {
         printf( "Starting Generation: %u/%u\n", i + 1, numGenerations );
         uint totalSum = 0;
@@ -685,19 +691,34 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
                                        &maxUniqueIndexes, &maxUniqueSides );
             if ( numOtherSolutions != 1 ) {
                 generation[j].sum = 0;
+                generation[j].numUniqueSides = 0;
+                generation[j].numUniqueIndexes = 0;
                 continue;
             }
-            uint sum = maxUniqueSides;
-            if ( sum > bestUniqueSides ) {
-                bestUniqueSides = sum;
+            uint sum = maxUniqueSides + maxUniqueIndexes;
+            uint comparison = foundBestSides ? sum : maxUniqueSides;
+            if ( comparison > bestComparison ) {
+                puzzle_printSolution( &solutions[0] );
+                bestComparison = comparison;
+                if ( !foundBestSides && comparison == 40 ) {
+                    foundBestSides = true;
+                }
             }
             totalSum += sum;
 
             generation[j].sum = sum;
+            generation[j].numUniqueSides = maxUniqueSides;
+            generation[j].numUniqueIndexes = maxUniqueIndexes;
         }
 
-        qsort( generation, generationSize, sizeof( PuzzleSum ), puzzleSumSortDescending );
+        if ( foundBestSides ) {
+            qsort( generation, generationSize, sizeof( PuzzleSum ), puzzleSumSortDescending );
+        } else {
+            qsort( generation, generationSize, sizeof( PuzzleSum ), puzzleSidesSortDescending );
+        }
         printf( "Best Sum of Uniques: %u\n", generation[0].sum );
+        printf( "Unique Sides: %u\n", generation[0].numUniqueSides );
+        printf( "Unique Indexes: %u\n", generation[0].numUniqueIndexes );
         printf( "Average: %.2f\n", totalSum * 1.0 / generationSize ); 
         float last100Average = 0;
         for ( uint i = 0; i < 100; ++i ) {
