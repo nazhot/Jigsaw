@@ -406,13 +406,14 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
             int index = row * 5 + col;
             originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 1 },
                                                              .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
-            int minIndex = solution->indexes[index] < solution->indexes[index + 1] ? solution->indexes[index] : solution->indexes[index + 1];
-            int maxIndex = solution->indexes[index] > solution->indexes[index + 1] ? solution->indexes[index] : solution->indexes[index + 1];
+            bool swap = solution->indexes[index] > solution->indexes[index + 1];
+            int minIndex = swap ? solution->indexes[index + 1] : solution->indexes[index];
+            int maxIndex = swap ? solution->indexes[index] : solution->indexes[index + 1];
             solutionPairs[solutionIndex] = ( PiecePair ) { .indexes = { minIndex, maxIndex },
-                                                             .sides = { verticalSides[sidesIndex][0], verticalSides[sidesIndex][1] } };
-            solutionPairs[solutionIndex].sides[0] += ( 4 - solution->rotations[minIndex] );
+                                                             .sides = { verticalSides[sidesIndex][swap ? 1 : 0], verticalSides[sidesIndex][swap ? 0 : 1] } };
+            solutionPairs[solutionIndex].sides[0] += ( 4 - solution->rotations[swap ? index + 1 : index] );
             solutionPairs[solutionIndex].sides[0] %= 4;
-            solutionPairs[solutionIndex].sides[1] += ( 4 - solution->rotations[maxIndex] );
+            solutionPairs[solutionIndex].sides[1] += ( 4 - solution->rotations[swap ? index : index + 1] );
             solutionPairs[solutionIndex].sides[1] %= 4;
             ++solutionIndex;
             ++sidesIndex;
@@ -425,13 +426,14 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
             int index = row * 5 + col;
             originalPairs[originalIndex++] = ( PiecePair ) { .indexes = { index, index + 5 },
                                                              .sides = { horizontalSides[sidesIndex][0], horizontalSides[sidesIndex][1] } };
-            int minIndex = solution->indexes[index] < solution->indexes[index + 5] ? solution->indexes[index] : solution->indexes[index + 5];
-            int maxIndex = solution->indexes[index] > solution->indexes[index + 5] ? solution->indexes[index] : solution->indexes[index + 5];
+            bool swap = solution->indexes[index] > solution->indexes[index + 5];
+            int minIndex = swap ? solution->indexes[index + 5] : solution->indexes[index];
+            int maxIndex = swap ? solution->indexes[index] : solution->indexes[index + 5];
             solutionPairs[solutionIndex] = ( PiecePair ) { .indexes = { minIndex, maxIndex },
-                                                             .sides = { horizontalSides[sidesIndex][0], horizontalSides[sidesIndex][1] } };
-            solutionPairs[solutionIndex].sides[0] += ( 4 - solution->rotations[minIndex] );
+                                                             .sides = { horizontalSides[sidesIndex][swap ? 1 : 0], horizontalSides[sidesIndex][swap ? 0 : 1] } };
+            solutionPairs[solutionIndex].sides[0] += ( 4 - solution->rotations[swap ? index + 5 : index] );
             solutionPairs[solutionIndex].sides[0] %= 4;
-            solutionPairs[solutionIndex].sides[1] += ( 4 - solution->rotations[maxIndex] );
+            solutionPairs[solutionIndex].sides[1] += ( 4 - solution->rotations[swap ? index : index + 5] );
             solutionPairs[solutionIndex].sides[1] %= 4;
             ++solutionIndex;
             ++sidesIndex;
@@ -464,7 +466,7 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
                                                    {0, 24, 4, 20, 0}, {0, 24, 20, 4, 0} };
     //get the valid triplets of edges
     uint numValidEdges = 0;
-    const uint maxValidEdges = 400;
+    const uint maxValidEdges = 2000;
     TripleIndex validEdges[maxValidEdges];
     puzzle_calculateValidEdges( puzzle, validEdges, &numValidEdges, maxValidEdges );
     if ( numValidEdges < 4 ) {
@@ -473,7 +475,7 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
 
     //for all of the valid configurations, try all possible combinations of edges
     uint numEdgeSolutions = 0;
-    uint maxEdgeSolutions = 7920;
+    uint maxEdgeSolutions = 10000;
     EdgeSolution edgeSolutions[maxEdgeSolutions];
     for ( uint i = 0; i < 6; ++i ) {
         char edges[4];
@@ -660,6 +662,12 @@ static int puzzleSidesSortDescending( const void* p1, const void* p2 ) {
     PuzzleSum* puzzleSum1 = ( PuzzleSum* ) p1;
     PuzzleSum* puzzleSum2 = ( PuzzleSum* ) p2;
     return puzzleSum2->numUniqueSides - puzzleSum1->numUniqueSides;
+}
+
+static int puzzleIndexesSortDescending( const void* p1, const void* p2 ) {
+    PuzzleSum* puzzleSum1 = ( PuzzleSum* ) p1;
+    PuzzleSum* puzzleSum2 = ( PuzzleSum* ) p2;
+    return puzzleSum2->numUniqueIndexes - puzzleSum1->numUniqueIndexes;
 }
 
 void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
