@@ -58,6 +58,164 @@ static bool charArrayContains( const char* const array, const uint arraySize,
     return false;
 }
 
+static void puzzle_setValidEdges( TripleIndex edgeTriples[864] ) {
+    static const int edges[] = { 1, 2, 3, 5, 10, 15, 9, 14, 19,  21, 22, 23 };
+    int connections[24][2] = { { -1 } };
+
+    for ( uint i = 0; i < 4; ++i ) {
+        connections[edges[i * 3]][0] = edges[i * 3 + 1];
+        connections[edges[i * 3 + 1]][0] = edges[i * 3];
+        connections[edges[i * 3 + 1]][1] = edges[i * 3 + 2];
+        connections[edges[i * 3 + 2]][0] = edges[i * 3 + 1];
+    }
+
+    uint count = 0;
+
+    for ( uint i = 0; i < 12; ++i ) {
+        for ( uint j = 0; j < 12; ++j ) {
+            if ( j == i ) {
+                continue;
+            }
+            for ( uint k = 0; k < 12; ++k ) {
+                if ( k == j || k == i ) {
+                    continue;
+                }
+                if ( connections[edges[i]][0] == edges[j] || connections[edges[i]][1] == edges[j] ||
+                     connections[edges[i]][0] == edges[k] || connections[edges[i]][1] == edges[k] ) {
+                   continue; 
+                }
+                if ( connections[edges[j]][0] == edges[i] || connections[edges[j]][1] == edges[i] ||
+                     connections[edges[j]][0] == edges[k] || connections[edges[j]][1] == edges[k] ) {
+                   continue; 
+                }
+                if ( connections[edges[k]][0] == edges[j] || connections[edges[k]][1] == edges[j] ||
+                     connections[edges[k]][0] == edges[i] || connections[edges[k]][1] == edges[i] ) {
+                   continue; 
+                }
+                edgeTriples[count].indexes[0] = edges[i];
+                edgeTriples[count].indexes[1] = edges[j];
+                edgeTriples[count].indexes[2] = edges[k];
+                ++count;
+            }
+        }
+    }
+}
+
+static bool tripleIndexesShareIndex( const TripleIndex* const triple1,
+                                const TripleIndex* const triple2 ) {
+    for ( uint i = 0; i < 3; ++i ) {
+        for ( uint j = 0; j < 3; ++j ) {
+            if ( triple1->indexes[i] == triple2->indexes[j] ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void solve( Puzzle* puzzle ) {
+    const static char cornerArrangements[6][5] = { {0, 4, 20, 24, 0}, {0, 4, 24, 20, 0},
+                                                   {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
+                                                   {0, 24, 4, 20, 0}, {0, 24, 20, 4, 0} };
+    static bool setEdges = false;
+    static TripleIndex edgeTriples[864];
+    if ( !setEdges ) {
+        setEdges = true;
+        puzzle_setValidEdges( edgeTriples );
+    }
+    uint numValidEdges = 0;
+    TripleIndex validEdges[864];
+    for ( uint i = 0; i < 864; ++i ) {
+        if ( piece_getSide( puzzle->pieces[edgeTriples[i].indexes[0]], RIGHT ) +
+             piece_getSide( puzzle->pieces[edgeTriples[i].indexes[1]], LEFT ) != 0 ) {
+            continue;
+        }
+
+        if ( piece_getSide( puzzle->pieces[edgeTriples[i].indexes[1]], RIGHT ) +
+             piece_getSide( puzzle->pieces[edgeTriples[i].indexes[2]], LEFT ) != 0 ) {
+            continue;
+        }
+        validEdges[numValidEdges] = edgeTriples[i];
+        ++numValidEdges;
+    }
+    if ( numValidEdges < 4 ) {
+        return;
+    }
+    //printf( "Edges: %u\n", numValidEdges );
+
+    uint numValidEdgeQuads = 0;
+    TripleIndex validEdgeQuads[5000][4];
+
+    for ( uint i = 0; i < numValidEdges; ++i ) {
+        for ( uint j = 0; j < numValidEdges; ++j ) {
+            if ( j == i || tripleIndexesShareIndex( &validEdges[i], &validEdges[j] ) ) {
+                continue;
+            }
+            for ( uint k = 0; k < numValidEdges; ++k ) {
+                if ( k == i || k == j || tripleIndexesShareIndex( &validEdges[i], &validEdges[k] ) ||
+                     tripleIndexesShareIndex( &validEdges[j], &validEdges[k] ) ) {
+                    continue;
+                }
+                for ( uint l = 0; l < numValidEdges; ++l ) {
+                    if ( l == i || l == j || l == k || tripleIndexesShareIndex( &validEdges[i], &validEdges[l] ) ||
+                         tripleIndexesShareIndex( &validEdges[j], &validEdges[l] ) ||
+                         tripleIndexesShareIndex( &validEdges[k], &validEdges[l] ) ) {
+                        continue;
+                    }
+                    validEdgeQuads[numValidEdgeQuads][0] = validEdges[i];
+                    validEdgeQuads[numValidEdgeQuads][1] = validEdges[j];
+                    validEdgeQuads[numValidEdgeQuads][2] = validEdges[k];
+                    validEdgeQuads[numValidEdgeQuads][3] = validEdges[l];
+                    ++numValidEdgeQuads;
+                }
+            }
+        }
+    }
+    if ( numValidEdgeQuads ) {
+        //printf( "Num Valid Edge Quads: %u\n", numValidEdgeQuads );
+    }
+
+    uint numValidEdgeSolutions = 0;
+    EdgeSolution validEdgeSolutions[numValidEdgeQuads * 6];
+
+    for ( uint i = 0; i < 6; ++i ) {
+        const char* cornerArrangement = cornerArrangements[i];
+        for ( uint j = 0; j < numValidEdgeQuads; ++j ) {
+            bool valid = true;
+            for ( uint k = 0; k < 4; ++k ) {
+                if ( piece_getSide( puzzle->pieces[cornerArrangement[i]], RIGHT ) +
+                    piece_getSide( puzzle->pieces[validEdgeQuads[j][k].indexes[0]], LEFT ) != 0 ) {
+                    valid = false;
+                    break;
+                }
+                if ( piece_getSide( puzzle->pieces[cornerArrangement[i + 1]], LEFT ) +
+                    piece_getSide( puzzle->pieces[validEdgeQuads[i][k].indexes[2]], RIGHT ) != 0 ) {
+                    valid = false;
+                    break;
+                }
+            }
+            if ( !valid ) {
+                continue;
+            }
+
+            validEdgeSolutions[numValidEdgeSolutions].cornerIndexes[0] = cornerArrangement[0];
+            validEdgeSolutions[numValidEdgeSolutions].cornerIndexes[1] = cornerArrangement[1];
+            validEdgeSolutions[numValidEdgeSolutions].cornerIndexes[2] = cornerArrangement[2];
+            validEdgeSolutions[numValidEdgeSolutions].cornerIndexes[3] = cornerArrangement[3];
+            for ( uint k = 0; k < 3; ++k ) {
+                validEdgeSolutions[numValidEdgeSolutions].topEdgeIndexes[k] = validEdgeQuads[j][0].indexes[k];
+                validEdgeSolutions[numValidEdgeSolutions].rightEdgeIndexes[k] = validEdgeQuads[j][1].indexes[k];
+                validEdgeSolutions[numValidEdgeSolutions].leftEdgeIndexes[k] = validEdgeQuads[j][2].indexes[k];
+                validEdgeSolutions[numValidEdgeSolutions].bottomEdgeIndexes[k] = validEdgeQuads[j][3].indexes[k];
+            }
+            ++numValidEdgeSolutions;
+        }
+    }
+    if ( numValidEdgeSolutions ) {
+        printf( "Num Edge Solutions: %u\n", numValidEdgeSolutions );
+    }
+}
+
 static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
                                                 TripleIndex* const validEdges,
                                                 uint* const numValidEdges,

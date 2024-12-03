@@ -100,4 +100,6 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
 */
 void puzzle_free( Puzzle* const puzzle );
 
+void solve( Puzzle* puzzle );
+
 #endif

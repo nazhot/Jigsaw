@@ -6,6 +6,8 @@
 
 int main( int argc, char *argv[] ) {
 
+    srand( time( NULL ) );
+
     const uint numUniqueConnections = 7;
     const uint generationSize = 100000;
     const uint numGenerations = 100000;
@@ -16,6 +18,14 @@ int main( int argc, char *argv[] ) {
 
     puzzle_findMostUniqueSolution( numUniqueConnections, generationSize, numGenerations,
                                    numSurivors, numChildren, minMutations, maxMutations );
+
+/*
+    Puzzle* puzzle = puzzle_create( 7 );
+    for ( uint i = 0; i < 2000000; ++i ) {
+        solve( puzzle ); 
+        puzzle_shuffle( puzzle );
+    }
+*/
 
     return 0;
 }
