@@ -10,6 +10,9 @@ typedef struct PuzzleSolution {
     char rotations[25];
 } PuzzleSolution;
 
+bool twoIndexesOriginallyTouched( const char index1, const char index2 );
+void puzzle_printSolution( const PuzzleSolution* const solution );
+
 /*
  * Holds the information about a Puzzle instance. 
  *
@@ -28,6 +31,8 @@ typedef struct Puzzle {
     uint numUniqueConnectors; 
 } Puzzle;
 
+void puzzle_shuffleUntilUniqueEdge( Puzzle* const puzzle );
+void puzzle_mutateCenter( Puzzle* const destPuzzle, const Puzzle* const srcPuzzle, const uint minMutations, const uint maxMutations );
 
 /*
  * Create a Puzzle that contains numUniqueConnectors amount of different connections
