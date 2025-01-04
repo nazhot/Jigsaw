@@ -52,7 +52,7 @@ bool da_addElementIfAble( DynamicArray* da, void* element ) {
     return true;
 }
 
-void* da_getElement( DynamicArray *da, unsigned int index ) {
+void* da_getElement( const DynamicArray* const da, const unsigned int index ) {
     if ( !da || index >= da->numElements ) {
         return NULL;
     }

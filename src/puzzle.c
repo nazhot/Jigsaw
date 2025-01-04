@@ -426,9 +426,7 @@ static void puzzle_recEdgeSolve( const Puzzle* const puzzle, uint edgeIndexes[4]
 
 static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                                             const EdgeSolution* edgeSolution,
-                                            TripleIndex* const validCenterRows,
-                                            uint* const numValidCenterRows,
-                                            const uint maxValidCenterRows ) { 
+                                            DynamicArray* const validCenterRows ) {
     static const uint centerIndexes[9] = { 6, 7, 8, 11, 12, 13, 16, 17, 18 };
     //Right/Left refer to Right/Left of edge pieces
     char validLefts[3] = {0};
@@ -440,7 +438,7 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
         validRights[i]= -piece_getSide( rightEdge, BOTTOM );
     }
 
-    *numValidCenterRows = 0;
+    validCenterRows->numElements = 0;
 
     for ( uint i = 0; i < 36; ++i ) {
         const uint firstIndex = i / 4; 
@@ -478,17 +476,15 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                 if ( !charArrayContains( validRights, 3, thirdRight ) ) {
                     continue;
                 }
+                TripleIndex tempValidCenterRow;
 
-                validCenterRows[*numValidCenterRows].indexes[0] = firstPiece.index;
-                validCenterRows[*numValidCenterRows].indexes[1] = secondPiece.index;
-                validCenterRows[*numValidCenterRows].indexes[2] = thirdPiece.index;
-                validCenterRows[*numValidCenterRows].rotations[0] = firstRotation;
-                validCenterRows[*numValidCenterRows].rotations[1] = secondRotation;
-                validCenterRows[*numValidCenterRows].rotations[2] = thirdRotation;
-                ++*numValidCenterRows;
-                if ( *numValidCenterRows == maxValidCenterRows ) {
-                    printf( "Too many CenterRows error\n" );
-                }
+                tempValidCenterRow.indexes[0] = firstPiece.index;
+                tempValidCenterRow.indexes[1] = secondPiece.index;
+                tempValidCenterRow.indexes[2] = thirdPiece.index;
+                tempValidCenterRow.rotations[0] = firstRotation;
+                tempValidCenterRow.rotations[1] = secondRotation;
+                tempValidCenterRow.rotations[2] = thirdRotation;
+                da_addElement( validCenterRows, &tempValidCenterRow );
             }
         }
     }
@@ -496,42 +492,37 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
 
 void puzzle_recCenterSolve( const Puzzle* const puzzle, uint centerIndexes[3],
                            const EdgeSolution* const edgeSolution,
-                           const TripleIndex* const centerTriples, const uint numCenterTriples,
-                           const uint currentRow, CenterSolution* const centerSolutions,
-                           uint *numCenterSolutions, const uint maxCenterSolutions ) {
+                           const DynamicArray* const centerRows, const uint currentRow,
+                           DynamicArray* const centerSolutions ) {
     if ( currentRow == 3 ) {
+        CenterSolution tempCenterSolution;
         for ( uint i = 0; i < 3; ++i ) {
-            TripleIndex row = centerTriples[centerIndexes[i]];
+            TripleIndex* row = ( TripleIndex* ) da_getElement( centerRows, centerIndexes[i] );
             for ( uint j = 0; j < 3; ++j ) {
-                centerSolutions[*numCenterSolutions].indexes[i][j] = row.indexes[j];
-                centerSolutions[*numCenterSolutions].rotations[i][j] = row.rotations[j];
+                tempCenterSolution.indexes[i][j] = row->indexes[j];
+                tempCenterSolution.rotations[i][j] = row->rotations[j];
             }
         }
+        da_addElement( centerSolutions, &tempCenterSolution );
 
-        validateCenterSolution( &centerSolutions[*numCenterSolutions], "Within recCenterSolve" );
-        ++*numCenterSolutions;
-        if ( *numCenterSolutions == maxCenterSolutions ) {
-            fprintf( stderr, "Too many center solutions\n" );
-            exit( 1 );
-        }
         return;
     }
 
     const char leftEdge = piece_getSide( puzzle->pieces[( int ) edgeSolution->leftEdgeIndexes[currentRow]], BOTTOM );
     const char rightEdge = piece_getSide( puzzle->pieces[( int ) edgeSolution->rightEdgeIndexes[currentRow]], BOTTOM );
 
-    for ( int i = 0; i < numCenterTriples; ++i ) {
+    for ( int i = 0; i < centerRows->numElements; ++i ) {
         if ( uintArrayContains( centerIndexes, currentRow, i ) ) {
             continue;   
         }
 
-        const TripleIndex row = centerTriples[i];
+        const TripleIndex* row = ( TripleIndex* ) da_getElement( centerRows, i );
 
         bool valid = true;
         for ( uint j = 0; j < currentRow; ++j ) {
-            TripleIndex checkRow = centerTriples[( int ) centerIndexes[j]];
+            TripleIndex* checkRow = ( TripleIndex* ) da_getElement( centerRows, ( int ) centerIndexes[j] );
             for ( uint k = 0; k < 3; ++k ) {
-                if ( charArrayContains( checkRow.indexes, 3, row.indexes[k] ) ) {
+                if ( charArrayContains( checkRow->indexes, 3, row->indexes[k] ) ) {
                     valid = false;
                     break;
                 }
@@ -543,43 +534,43 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, uint centerIndexes[3],
         if ( !valid ) {
             continue;
         }
-        const char leftCenter = piece_getSide( puzzle->pieces[( int ) row.indexes[0]], LEFT );
+        const char leftCenter = piece_getSide( puzzle->pieces[( int ) row->indexes[0]], LEFT );
         if ( leftCenter + leftEdge != 0  ){
             continue;
         }
-        const char rightCenter = piece_getSide( puzzle->pieces[( int ) row.indexes[2]], RIGHT );
+        const char rightCenter = piece_getSide( puzzle->pieces[( int ) row->indexes[2]], RIGHT );
         if ( rightCenter + rightEdge != 0 ) {
             continue;
         }
 
         if ( currentRow == 0 ) {
             for ( uint j = 0; j < 3; ++j ) {
-                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], TOP, row.rotations[j] ) +
+                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ) +
                     piece_getSide( puzzle->pieces[( int ) edgeSolution->topEdgeIndexes[j]], BOTTOM ) != 0 ) {
                     valid = false;
                     break;
                 }
             }
         } else if ( currentRow == 1 ) {
-            TripleIndex rowAbove = centerTriples[( int ) centerIndexes[0]];
+            TripleIndex* rowAbove = ( TripleIndex* ) da_getElement( centerRows, ( int ) centerIndexes[0] );
             for ( uint j = 0; j < 3; ++j ) {
-                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], TOP, row.rotations[j] ) +
-                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove.indexes[j]], BOTTOM, rowAbove.rotations[j] ) != 0 ) {
+                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ) +
+                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove->indexes[j]], BOTTOM, rowAbove->rotations[j] ) != 0 ) {
                     valid = false;
                     break;
                 }
 
             }
         } else if ( currentRow == 2 ) {
-            TripleIndex rowAbove = centerTriples[( int ) centerIndexes[1]];
+            TripleIndex* rowAbove = ( TripleIndex* ) da_getElement( centerRows, ( int ) centerIndexes[1] );
             for ( uint j = 0; j < 3; ++j ) {
-                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], BOTTOM, row.rotations[j] ) +
+                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], BOTTOM, row->rotations[j] ) +
                     piece_getSide( puzzle->pieces[( int ) edgeSolution->bottomEdgeIndexes[j]], BOTTOM ) != 0 ) {
                     valid = false;
                     break;
                 }
-                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row.indexes[j]], TOP, row.rotations[j] ) +
-                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove.indexes[j]], BOTTOM, rowAbove.rotations[j] ) != 0 ) {
+                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ) +
+                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove->indexes[j]], BOTTOM, rowAbove->rotations[j] ) != 0 ) {
                     valid = false;
                     break;
                 }
@@ -590,9 +581,8 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, uint centerIndexes[3],
         }
 
         centerIndexes[currentRow] = i;
-        puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, 
-                              centerTriples, numCenterTriples, currentRow + 1,
-                              centerSolutions, numCenterSolutions, maxCenterSolutions );
+        puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, centerRows,
+                               currentRow + 1, centerSolutions );
     }
 }
 
@@ -786,7 +776,6 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
         allocatedEdges = true;
     }
 
-    uint numEdgeSolutions = 0;
     puzzle_findValidEdges( puzzle, edgeSolutions );
 
 /*
@@ -802,37 +791,28 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
     }
 */
 
-/*
-    uint numCenterSolutions = 0;
-    uint maxCenterSolutions = 2000;
-    CenterSolution centerSolutions[maxCenterSolutions];
-    *numOtherSolutions = 0;
+    static bool allocatedCenters = false;
+    DynamicArray* centerSolutions;
+    if ( !allocatedCenters ) {
+        centerSolutions = da_create( 2000, sizeof( CenterSolution ) );
+        allocatedCenters = true;
+    }
     *maxUniqueIndexes = 0;
     *maxUniqueSides = 0;
-    for ( uint i = 0; i < numEdgeSolutions; ++i ) {
-        uint numValidCenters = 0;
-        const uint maxValidCenters = 4000;
-        TripleIndex validCenters[maxValidCenters];
-        puzzle_calculateValidCenterRows( puzzle, &edgeSolutions[i], validCenters,
-                                        &numValidCenters, maxValidCenters );
-        for ( uint j = 0; j < numValidCenters; ++j ) {
-            for ( uint k = 0; k < 3; ++k ) {
-                if ( validCenters[j].indexes[k] < 0 || validCenters[j].indexes[k] > 25 ) {
-                    printf( "Found error in Valid Centers! (Indexes)\n" );
-                }
-                if ( validCenters[j].rotations[k] < 0 || validCenters[j].rotations[k] > 3 ) {
-                    printf( "Found error in Valid Centers! (Rotations)\n" );
-                }
-            }
-        }
+    for ( uint i = 0; i < edgeSolutions->numElements; ++i ) {
+        DynamicArray* validCenterRows = da_create( 4000, sizeof( TripleIndex ) );
+        puzzle_calculateValidCenterRows( puzzle, ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
+                                         validCenterRows );
         uint centerIndexes[3];
-        uint temp = numCenterSolutions;
-        puzzle_recCenterSolve( puzzle, centerIndexes, &edgeSolutions[i],
-                              validCenters, numValidCenters, 0,
-                              centerSolutions, &numCenterSolutions, maxCenterSolutions );
-        for  ( uint j = temp; j < numCenterSolutions; ++j ) {
+        uint temp = centerSolutions->numElements;
+        puzzle_recCenterSolve( puzzle, centerIndexes,
+                              ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
+                              validCenterRows, 0, centerSolutions );
+        for  ( uint j = temp; j < centerSolutions->numElements; ++j ) {
             PuzzleSolution solution;
-            puzzle_convertEdgeCenterToSolution( &solution, &edgeSolutions[i], &centerSolutions[j] );
+            puzzle_convertEdgeCenterToSolution( &solution,
+                                                ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
+                                                ( CenterSolution* ) da_getElement( centerSolutions, j ) );
             uint numIndexConnections = 0;
             uint numSideConnections = 0;
             puzzle_calculateOriginalConnections( puzzle, &solution,
@@ -856,8 +836,9 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
                 return;
             }
         }
+
+        da_free( validCenterRows );
     }
-*/
 }
 
 static void puzzle_setPieces( Puzzle* const puzzle ) {

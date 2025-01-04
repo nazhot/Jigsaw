@@ -34,7 +34,7 @@ bool da_addElementIfAble( DynamicArray* da, void* element );
 /**
  * Get element at specified index
  */
-void* da_getElement( DynamicArray* da, unsigned int index );
+void* da_getElement( const DynamicArray* const da, const unsigned int index );
 
 /**
  * Replace the element at index with the provided element
