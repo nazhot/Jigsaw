@@ -63,6 +63,8 @@ char piece_getSideWithRotation( const Piece piece, const SideDirection side,
 /*
  * Print the Piece, no rotation
 */
+
+bool piece_piecesConnect( const char side1, const char side2 );
 void piece_print( const Piece* piece );
 
 #endif

@@ -1,4 +1,5 @@
 #include "pieces.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -20,6 +21,11 @@ __inline__ char piece_getSide( const Piece piece, const SideDirection side ) {
 __inline__ char piece_getSideWithRotation( const Piece piece, const SideDirection side,
                                 const uint rotation ) {
     return piece.sides[( side + rotation ) % 4 ];
+}
+
+__inline__ bool piece_piecesConnect( const char side1, const char side2 ) {
+    //return side1 + side2 == 0;
+    return side1 == side2;
 }
 
 void piece_print( const Piece* const piece ) {

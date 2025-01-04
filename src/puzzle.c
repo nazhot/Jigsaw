@@ -143,8 +143,10 @@ static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
     char validRights[4] = {0};
     for ( uint i = 0; i < 4; ++i ) {
         const Piece corner = puzzle->pieces[cornerIndexes[i]];
-        validLefts[i] = -piece_getSide( corner, RIGHT );
-        validRights[i] = -piece_getSide( corner, LEFT );
+        //validLefts[i] = -piece_getSide( corner, RIGHT );
+        //validRights[i] = -piece_getSide( corner, LEFT );
+        validLefts[i] = piece_getSide( corner, RIGHT );
+        validRights[i] = piece_getSide( corner, LEFT );
     }
 
     validEdges->numElements = 0;
@@ -166,7 +168,7 @@ static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
             const Piece second = puzzle->pieces[edgeIndexes[j]];
             const char secondLeft = piece_getSide( second, LEFT );
 
-            if ( secondLeft + firstRight != 0 ) {
+            if ( !piece_piecesConnect( secondLeft, firstRight ) ) {
                 continue;
             }
 
@@ -180,7 +182,7 @@ static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
 
                 const char thirdLeft = piece_getSide( third, LEFT );
 
-                if ( secondRight + thirdLeft != 0 ) {
+                if ( !piece_piecesConnect( secondRight, thirdLeft ) ){ 
                     continue;
                 }
 
@@ -231,13 +233,16 @@ static void puzzle_recEdgeSolve( const Puzzle* const puzzle, uint edgeIndexes[4]
             continue;
         }
         const char leftEdge = piece_getSide( puzzle->pieces[( int  ) edgeToCheck->indexes[0]], LEFT );
-        if ( leftEdge + leftCorner != 0  ){
+        
+        if ( !piece_piecesConnect( leftEdge, leftCorner ) ) {
             continue;
         }
         const char rightEdge = piece_getSide( puzzle->pieces[( int ) edgeToCheck->indexes[2]], RIGHT );
-        if ( rightEdge + rightCorner != 0 ) {
+
+        if ( !piece_piecesConnect( rightEdge, rightCorner ) ) {
             continue;
         }
+
         edgeIndexes[currentEdge] = i;
         if ( currentEdge == 3 ) {
             EdgeSolution tempEdgeSolution;
@@ -273,8 +278,10 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
     for ( uint i = 0; i < 3; ++i ) {
         const Piece leftEdge = puzzle->pieces[( int ) edgeSolution->leftEdgeIndexes[i]];
         const Piece rightEdge = puzzle->pieces[( int ) edgeSolution->rightEdgeIndexes[i]];
-        validLefts[i]= -piece_getSide( leftEdge, BOTTOM );
-        validRights[i]= -piece_getSide( rightEdge, BOTTOM );
+        //validLefts[i]= -piece_getSide( leftEdge, BOTTOM );
+        //validRights[i]= -piece_getSide( rightEdge, BOTTOM );
+        validLefts[i]= piece_getSide( leftEdge, BOTTOM );
+        validRights[i]= piece_getSide( rightEdge, BOTTOM );
     }
 
     validCenterRows->numElements = 0;
@@ -296,7 +303,7 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
             const uint secondRotation = j % 4;
             const Piece secondPiece = puzzle->pieces[centerIndexes[secondIndex]];
             const char secondLeft = piece_getSideWithRotation( secondPiece, LEFT, secondRotation );
-            if ( firstRight + secondLeft != 0 ) {
+            if ( !piece_piecesConnect( firstRight, secondLeft ) ) {
                 continue;
             }
             const char secondRight = piece_getSideWithRotation( secondPiece, RIGHT, secondRotation );
@@ -308,7 +315,8 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                 const uint thirdRotation = k % 4;
                 const Piece thirdPiece = puzzle->pieces[centerIndexes[thirdIndex]];
                 const char thirdLeft = piece_getSideWithRotation( thirdPiece, LEFT, thirdRotation );
-                if ( secondRight + thirdLeft != 0 ) {
+
+                if ( !piece_piecesConnect( secondRight, thirdLeft ) ){
                     continue;
                 }
                 const char thirdRight = piece_getSideWithRotation( thirdPiece, RIGHT, thirdRotation );
@@ -374,18 +382,18 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, uint centerIndexes[3],
             continue;
         }
         const char leftCenter = piece_getSide( puzzle->pieces[( int ) row->indexes[0]], LEFT );
-        if ( leftCenter + leftEdge != 0  ){
+        if ( !piece_piecesConnect( leftCenter, leftEdge ) ) {
             continue;
         }
         const char rightCenter = piece_getSide( puzzle->pieces[( int ) row->indexes[2]], RIGHT );
-        if ( rightCenter + rightEdge != 0 ) {
+        if ( !piece_piecesConnect( rightCenter, rightEdge ) ) {
             continue;
         }
 
         if ( currentRow == 0 ) {
             for ( uint j = 0; j < 3; ++j ) {
-                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ) +
-                    piece_getSide( puzzle->pieces[( int ) edgeSolution->topEdgeIndexes[j]], BOTTOM ) != 0 ) {
+                if ( !piece_piecesConnect( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ),
+                    piece_getSide( puzzle->pieces[( int ) edgeSolution->topEdgeIndexes[j]], BOTTOM ) ) ) {
                     valid = false;
                     break;
                 }
@@ -393,8 +401,8 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, uint centerIndexes[3],
         } else if ( currentRow == 1 ) {
             TripleIndex* rowAbove = ( TripleIndex* ) da_getElement( centerRows, ( int ) centerIndexes[0] );
             for ( uint j = 0; j < 3; ++j ) {
-                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ) +
-                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove->indexes[j]], BOTTOM, rowAbove->rotations[j] ) != 0 ) {
+                if ( !piece_piecesConnect( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ),
+                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove->indexes[j]], BOTTOM, rowAbove->rotations[j] ) ) ) {
                     valid = false;
                     break;
                 }
@@ -403,13 +411,13 @@ void puzzle_recCenterSolve( const Puzzle* const puzzle, uint centerIndexes[3],
         } else if ( currentRow == 2 ) {
             TripleIndex* rowAbove = ( TripleIndex* ) da_getElement( centerRows, ( int ) centerIndexes[1] );
             for ( uint j = 0; j < 3; ++j ) {
-                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], BOTTOM, row->rotations[j] ) +
-                    piece_getSide( puzzle->pieces[( int ) edgeSolution->bottomEdgeIndexes[j]], BOTTOM ) != 0 ) {
+                if ( !piece_piecesConnect( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], BOTTOM, row->rotations[j] ),
+                    piece_getSide( puzzle->pieces[( int ) edgeSolution->bottomEdgeIndexes[j]], BOTTOM ) ) ) {
                     valid = false;
                     break;
                 }
-                if ( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ) +
-                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove->indexes[j]], BOTTOM, rowAbove->rotations[j] ) != 0 ) {
+                if ( !piece_piecesConnect( piece_getSideWithRotation( puzzle->pieces[( int ) row->indexes[j]], TOP, row->rotations[j] ),
+                    piece_getSideWithRotation( puzzle->pieces[( int ) rowAbove->indexes[j]], BOTTOM, rowAbove->rotations[j] ) ) ) {
                     valid = false;
                     break;
                 }
@@ -686,6 +694,47 @@ static void puzzle_setPieces( Puzzle* const puzzle ) {
                                              puzzle->connections[5 * col + row],
                                              puzzle->connections[i + 20],
                                              -puzzle->connections[5 * ( col - 1 ) + row] );
+        }
+    }
+}
+
+static void puzzle_setPieces2( Puzzle* const puzzle ) {
+    for ( uint i = 0; i < 25; ++i ) {
+        if ( i == 0 ) {
+            puzzle->pieces[0] = piece_create( CORNER, i, 0, puzzle->connections[0],
+                                             0, puzzle->connections[20] );
+        } else if ( i == 4 ) {
+            puzzle->pieces[4] = piece_create( CORNER, i, 0, puzzle->connections[24],
+                                             0, puzzle->connections[15] );
+        } else if ( i == 20 ) {
+            puzzle->pieces[20] = piece_create( CORNER, i, 0, puzzle->connections[35],
+                                              0, puzzle->connections[4] );
+        } else if ( i == 24 ) {
+            puzzle->pieces[24] = piece_create( CORNER, i, 0, puzzle->connections[19],
+                                              0, puzzle->connections[39] );
+        } else if ( i < 4 ) { //top edge
+            puzzle->pieces[i] = piece_create( EDGE, i, 0, puzzle->connections[i * 5],
+                                             puzzle->connections[i + 20],
+                                             puzzle->connections[( i - 1 ) * 5] );
+        } else if ( i % 5 == 0 ) { //left edge
+            puzzle->pieces[i] = piece_create( EDGE, i, 0, puzzle->connections[i + 15],
+                                             puzzle->connections[i / 5],
+                                             puzzle->connections[i + 20] );
+        } else if ( ( i - 4) % 5 == 0 ) { //right edge
+            puzzle->pieces[i] = piece_create( EDGE, i, 0, puzzle->connections[i + 20],
+                                             puzzle->connections[( i + 1 ) / 5 + 14],
+                                             puzzle->connections[i + 15] );
+        } else if ( i > 20 && i < 24 ) { //bottom edge
+            puzzle->pieces[i] = piece_create( EDGE, i, 0, puzzle->connections[( i - 21 ) * 5 + 4],
+                                             puzzle->connections[i + 15],
+                                             puzzle->connections[( i - 20 ) * 5 + 4] );
+        } else {
+            uint row = i / 5;
+            uint col = i % 5;
+            puzzle->pieces[i] = piece_create( CENTER, i, puzzle->connections[i + 15],
+                                             puzzle->connections[5 * col + row],
+                                             puzzle->connections[i + 20],
+                                             puzzle->connections[5 * ( col - 1 ) + row] );
         }
     }
 }
