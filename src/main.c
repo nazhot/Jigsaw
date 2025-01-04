@@ -17,8 +17,8 @@ int main( int argc, char *argv[] ) {
     const uint minMutations = 1;
     const uint maxMutations = 6;
 
-    //puzzle_findMostUniqueSolution( numUniqueConnections, generationSize, numGenerations,
-    //                               numSurivors, numChildren, minMutations, maxMutations );
+    puzzle_findMostUniqueSolution( numUniqueConnections, generationSize, numGenerations,
+                                   numSurivors, numChildren, minMutations, maxMutations );
 
     Puzzle* puzzle = puzzle_create( 6 );
     puzzle_shuffleUntilUniqueEdge( puzzle );

@@ -749,11 +749,11 @@ void puzzle_shuffleUntilUniqueEdge( Puzzle* const puzzle ) {
     }
 }
 
-
-void puzzle_findValidSolutions( const Puzzle* const puzzle,
-                               PuzzleSolution* const otherSolutions,
-                               uint* const numOtherSolutions, const uint maxOtherSolutions,
-                               uint* const maxUniqueIndexes, uint* const maxUniqueSides ) {
+//TODO: rework the maxEdgeSolutions parameter. Thought is to make sure that the caller
+//can set the max, and supply an array large enough for it, but this would lead
+//to weird behaviour if called multiple times with different values
+void puzzle_findValidEdges( const Puzzle* const puzzle, uint* numEdgeSolutions,
+                            EdgeSolution* const edgeSolutions, const uint maxEdgeSolutions ) {
     //only 6 valid arangements of corners (top left, top right, bottom right, bottom left)
     const static char cornerArrangements[6][5] = { {0, 4, 20, 24, 0}, {0, 4, 24, 20, 0},
         {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
@@ -768,8 +768,20 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
     }
 
     //for all of the valid configurations, try all possible combinations of edges
-    uint numEdgeSolutions = 0;
-    uint maxEdgeSolutions = 10000000;
+    *numEdgeSolutions = 0;
+    for ( uint i = 0; i < 6; ++i ) {
+        uint edges[4];
+        puzzle_recEdgeSolve( puzzle, edges, cornerArrangements[i], 
+                            validEdges, numValidEdges, 0, edgeSolutions,
+                            numEdgeSolutions, maxEdgeSolutions );
+    }
+}
+
+void puzzle_findValidSolutions( const Puzzle* const puzzle,
+                               PuzzleSolution* const otherSolutions,
+                               uint* const numOtherSolutions, const uint maxOtherSolutions,
+                               uint* const maxUniqueIndexes, uint* const maxUniqueSides ) {
+    static const uint maxEdgeSolutions = 10000000;
     static bool allocatedEdges = false;
     static EdgeSolution* edgeSolutions;
     //terrible idea, no real way to free this after
@@ -777,13 +789,11 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
         edgeSolutions = malloc( sizeof( EdgeSolution ) * maxEdgeSolutions );
         allocatedEdges = true;
     }
-    for ( uint i = 0; i < 6; ++i ) {
-        uint edges[4];
-        puzzle_recEdgeSolve( puzzle, edges, cornerArrangements[i], 
-                            validEdges, numValidEdges, 0, edgeSolutions,
-                            &numEdgeSolutions, maxEdgeSolutions );
-    }
 
+    uint numEdgeSolutions = 0;
+    puzzle_findValidEdges( puzzle, &numEdgeSolutions, edgeSolutions, maxEdgeSolutions );
+
+/*
     bool valid = false;
     for ( uint i = 0; i < numEdgeSolutions; ++i ) {
         if ( edgeSolutionIsUnique( &edgeSolutions[i]) ) {
@@ -794,6 +804,7 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
     if ( !valid ) {
         return;
     }
+*/
 
     uint numCenterSolutions = 0;
     uint maxCenterSolutions = 2000;
@@ -1099,10 +1110,10 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
                               minMutations, maxMutations );
                 ++index;
             }
-            puzzle_shuffleUntilUniqueEdge( generation[j].puzzle );
+            puzzle_shuffle( generation[j].puzzle );
         }
         for ( uint j = index; j < generationSize; ++j ) {
-            puzzle_shuffleUntilUniqueEdge( generation[j].puzzle );
+            puzzle_shuffle( generation[j].puzzle );
         }
     }
 }
