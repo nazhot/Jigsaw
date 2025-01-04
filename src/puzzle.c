@@ -32,8 +32,6 @@ typedef struct PiecePair {
     char sides[2];
 } PiecePair;
 
-uint totalMilliSecondsLoops = 0;
-uint totalMilliSecondsArray = 0;
 
 bool twoIndexesOriginallyTouched( const char index1, const char index2 ) {
     uint col1 = index1 % 5;
@@ -134,82 +132,6 @@ static bool uintArrayContains( const uint* const array, const uint arraySize,
         }
     }
     return false;
-}
-
-static void puzzle_calculateValidEdges2( const Puzzle* const puzzle,
-                                        DynamicArray* const validEdges ) {
-    static const uint cornerIndexes[4] = { 0, 4, 20, 24 };
-    static const uint edgeIndexes[12] = { 1, 2, 3, 5, 10, 15, 9, 14, 19, 21, 22, 23 };
-    static bool setupArray = false;
-    static uint allCombos[1320][3];
-    if ( !setupArray ) {
-        uint numLoops = 0;
-        for ( uint i = 0; i < 12; ++i ) {
-            for ( uint j = 0; j < 12; ++j ) {
-                if ( i == j ) {
-                    continue;
-                }
-                for ( uint k = 0; k < 12; ++k ) {
-                    if ( i == k || j ==k ) {
-                        continue;
-                    }
-                    allCombos[numLoops][0] = i;
-                    allCombos[numLoops][1] = j;
-                    allCombos[numLoops][2] = k;
-                    ++numLoops;
-                }
-            }
-        }
-        setupArray = true;
-    }
-    //Right/Left refer to Right/Left of edge pieces
-    char validLefts[4] = {0};
-    char validRights[4] = {0};
-    for ( uint i = 0; i < 4; ++i ) {
-        const Piece corner = puzzle->pieces[cornerIndexes[i]];
-        validLefts[i] = -piece_getSide( corner, RIGHT );
-        validRights[i] = -piece_getSide( corner, LEFT );
-    }
-
-    validEdges->numElements = 0;
-    for ( uint i = 0; i < 1320; ++i ) {
-        const Piece first = puzzle->pieces[edgeIndexes[allCombos[i][0]]];
-        const char firstLeft = piece_getSide( first, LEFT );
-
-        if ( !charArrayContains( validLefts, 4, firstLeft ) ) {
-            continue;
-        }
-
-        const char firstRight = piece_getSide( first, RIGHT );
-        const Piece second = puzzle->pieces[edgeIndexes[allCombos[i][1]]];
-        const char secondLeft = piece_getSide( second, LEFT );
-
-        if ( secondLeft + firstRight != 0 ) {
-            continue;
-        }
-
-        const char secondRight = piece_getSide( second, RIGHT );
-        const Piece third = puzzle->pieces[edgeIndexes[allCombos[i][2]]];
-
-        const char thirdLeft = piece_getSide( third, LEFT );
-
-        if ( secondRight + thirdLeft != 0 ) {
-            continue;
-        }
-
-        const char thirdRight = piece_getSide( third, RIGHT );
-
-        if ( !charArrayContains( validRights, 4, thirdRight ) ) {
-            continue; 
-        }
-        TripleIndex tempTripleIndex;
-
-        tempTripleIndex.indexes[0] = first.index;
-        tempTripleIndex.indexes[1] = second.index;
-        tempTripleIndex.indexes[2] = third.index;
-
-        da_addElement( validEdges, &tempTripleIndex );
-    }
 }
 
 static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
@@ -640,18 +562,7 @@ void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edge
         allocatedEdges = true;
     }
 
-    clock_t startTime = clock();
     puzzle_calculateValidEdges( puzzle, validEdges );
-    clock_t diffTime = clock() - startTime;
-    uint msec = diffTime * 1000 / CLOCKS_PER_SEC;
-    totalMilliSecondsLoops += diffTime;
-
-    startTime = clock();
-    puzzle_calculateValidEdges2( puzzle, validEdges );
-    diffTime = clock() - startTime;
-    msec = diffTime * 1000 / CLOCKS_PER_SEC;
-    totalMilliSecondsArray += diffTime;
-    
 
     if ( validEdges->numElements < 4 ) {
         printf( "Error in edge solver\n" );
@@ -910,9 +821,6 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
         generation[i].sum = 0;
     }
 
-    totalMilliSecondsArray = 0;
-    totalMilliSecondsLoops = 0;
-
     uint bestComparison = 0;
     bool foundBestSides = false;
     for ( uint i = 0; i < numGenerations; ++i ) {
@@ -993,10 +901,6 @@ void puzzle_findMostUniqueSolution( const uint numUniqueConnections,
             puzzle_shuffle( generation[j].puzzle );
         }
     }
-
-    printf( "Total milliseconds (Loops): %u\n", totalMilliSecondsLoops );
-    printf( "Total milliseconds (Array): %u\n", totalMilliSecondsArray );
-
 }
 
 

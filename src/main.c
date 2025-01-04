@@ -20,6 +20,8 @@ int main( int argc, char *argv[] ) {
     puzzle_findMostUniqueSolution( numUniqueConnections, generationSize, numGenerations,
                                    numSurivors, numChildren, minMutations, maxMutations );
 
+    exit( 0 );
+
     Puzzle* puzzle = puzzle_create( 6 );
     puzzle_shuffleUntilUniqueEdge( puzzle );
     Puzzle* temp = malloc( sizeof( Puzzle ) );
