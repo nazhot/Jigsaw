@@ -157,27 +157,34 @@ static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
         const char firstRight = piece_getSide( first, RIGHT );
 
         for ( uint j = 0; j < 12; ++j ) {
+            if ( j == i ) {
+                continue;
+            }
             const Piece second = puzzle->pieces[edgeIndexes[j]];
             const char secondLeft = piece_getSide( second, LEFT );
 
-            if ( j == i || secondLeft + firstRight != 0 ) {
+            if ( secondLeft + firstRight != 0 ) {
                 continue;
             }
 
             const char secondRight = piece_getSide( second, RIGHT );
 
             for ( uint k = 0; k < 12; ++k ) {
+                if ( i == k || j == k ) {
+                    continue;
+                }
                 const Piece third = puzzle->pieces[edgeIndexes[k]];
+
+                const char thirdLeft = piece_getSide( third, LEFT );
+
+                if ( secondRight + thirdLeft != 0 ) {
+                    continue;
+                }
+
                 const char thirdRight = piece_getSide( third, RIGHT );
 
                 if ( !charArrayContains( validRights, 4, thirdRight ) ) {
                     continue; 
-                }
-
-                const char thirdLeft = piece_getSide( third, LEFT );
-
-                if ( i == k || j == k || secondRight + thirdLeft != 0 ) {
-                    continue;
                 }
 
                 TripleIndex tempTripleIndex;
