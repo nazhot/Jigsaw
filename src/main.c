@@ -11,7 +11,7 @@ int main( int argc, char *argv[] ) {
 
     const uint numUniqueConnections = 7;
     const uint generationSize = 5000;
-    const uint numGenerations = 1000000;
+    const uint numGenerations = 100;
     const uint numSurivors = 5;
     const uint numChildren = 800;
     const uint minMutations = 1;

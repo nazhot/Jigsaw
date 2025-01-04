@@ -16,3 +16,11 @@
     - set edges to valid solution
     - start in top left inner corner, for each center that can satisfy it move left to right, top to bottom, filling in centers that can satisfy
 
+
+Tested:
+- Array vs nested loops for going through possible triples
+    - Nested loops was initial thought, going 3 loops through all of the edges
+    - Array was creating an array of all triples that shared no index
+    - Times for both after 100 generations test (from clock(), raw return no calculation done on number )
+    - Array: 12836298
+    - Loops: 1423611
