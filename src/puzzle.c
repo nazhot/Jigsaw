@@ -766,11 +766,12 @@ void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edge
 void findValidCentersForEdge( const Puzzle* const puzzle, const EdgeSolution* edgeSolution,
                               DynamicArray* centerSolutions ) {
     static bool allocatedCenters = false;
-    DynamicArray* validCenterRows;
+    static DynamicArray* validCenterRows;
     if ( !allocatedCenters ) {
         validCenterRows = da_create( 4000, sizeof( TripleIndex ) );
         allocatedCenters = true;
     }
+    validCenterRows->numElements = 0;
     puzzle_calculateValidCenterRows( puzzle, edgeSolution, validCenterRows );
     uint centerIndexes[3];
     puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, validCenterRows,
@@ -782,23 +783,21 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
                                PuzzleSolution* const otherSolutions,
                                uint* const numOtherSolutions, const uint maxOtherSolutions,
                                uint* const maxUniqueIndexes, uint* const maxUniqueSides ) {
-    DynamicArray* edgeSolutions;
-    static const uint maxEdgeSolutions = 10000000;
-    static bool allocatedEdges = false;
-    //terrible idea, no real way to free this after
-    if ( !allocatedEdges ) {
+    static DynamicArray* edgeSolutions;
+    static DynamicArray* centerSolutions;
+    static bool allocatedArrays = false;
+    if ( !allocatedArrays ) {
+        //terrible idea, no real way to free this after
+        centerSolutions = da_create( 2000, sizeof( CenterSolution ) );
         edgeSolutions = da_create( 1000000, sizeof( EdgeSolution ) );
-        allocatedEdges = true;
+        allocatedArrays = true;
     }
+
+    edgeSolutions->numElements = 0;
+    centerSolutions->numElements = 0;
 
     puzzle_findValidEdges( puzzle, edgeSolutions );
 
-    static bool allocatedCenters = false;
-    DynamicArray* centerSolutions;
-    if ( !allocatedCenters ) {
-        centerSolutions = da_create( 2000, sizeof( CenterSolution ) );
-        allocatedCenters = true;
-    }
     *maxUniqueIndexes = 0;
     *maxUniqueSides = 0;
     for ( uint i = 0; i < edgeSolutions->numElements; ++i ) {
@@ -833,8 +832,6 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
                 return;
             }
         }
-
-        da_free( validCenterRows );
     }
 }
 
