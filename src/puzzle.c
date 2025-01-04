@@ -306,9 +306,7 @@ void solve( Puzzle* puzzle ) {
 }
 
 static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
-                                       TripleIndex* const validEdges,
-                                       uint* const numValidEdges,
-                                       const uint maxValidEdges ) {
+                                        DynamicArray* const validEdges ) {
     static const uint cornerIndexes[4] = { 0, 4, 20, 24 };
     static const uint edgeIndexes[12] = { 1, 2, 3, 5, 10, 15, 9, 14, 19, 21, 22, 23 };
     //Right/Left refer to Right/Left of edge pieces
@@ -320,7 +318,7 @@ static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
         validRights[i] = -piece_getSide( corner, LEFT );
     }
 
-    *numValidEdges = 0;
+    validEdges->numElements = 0;
     for ( uint i = 0; i < 12; ++i ) { //left
         const Piece first = puzzle->pieces[edgeIndexes[i]];
         const char firstLeft = piece_getSide( first, LEFT );
@@ -355,14 +353,13 @@ static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
                     continue;
                 }
 
-                validEdges[*numValidEdges].indexes[0] = first.index;
-                validEdges[*numValidEdges].indexes[1] = second.index;
-                validEdges[*numValidEdges].indexes[2] = third.index;
-                ++*numValidEdges;
-                if ( *numValidEdges == maxValidEdges ) {
-                    fprintf( stderr, "Too many valid edges\n" );
-                    exit( 1 );
-                }
+                TripleIndex tempTripleIndex;
+
+                tempTripleIndex.indexes[0] = first.index;
+                tempTripleIndex.indexes[1] = second.index;
+                tempTripleIndex.indexes[2] = third.index;
+                
+                da_addElement( validEdges, &tempTripleIndex );
             }
         }
     }
@@ -370,22 +367,23 @@ static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
 
 static void puzzle_recEdgeSolve( const Puzzle* const puzzle, uint edgeIndexes[4],
                                 const char* const currentArrangement,
-                                const TripleIndex* const edgeTriples, const uint numEdgeTriples,
+                                const DynamicArray* const edgeTriples, 
                                 const uint currentEdge, DynamicArray* const edgeSolutions ) {
     const char leftCorner = piece_getSide( puzzle->pieces[( int ) currentArrangement[( int ) currentEdge]], RIGHT );
     const char rightCorner = piece_getSide( puzzle->pieces[( int ) currentArrangement[( int  ) currentEdge + 1]], LEFT );
 
-    for ( uint i = 0; i < numEdgeTriples; ++i ) {
+    for ( uint i = 0; i < edgeTriples->numElements; ++i ) {
         if ( uintArrayContains( edgeIndexes, currentEdge, i ) ) {
             continue;   
         }
 
+        TripleIndex* edgeToCheck = ( TripleIndex* ) da_getElement( edgeTriples, i );
         bool valid = true;
         for ( uint j = 0; j < currentEdge; ++j ) {
+            TripleIndex* tempTripleIndex1 = ( TripleIndex* ) da_getElement( edgeTriples, ( int ) edgeIndexes[j] );
             for ( uint k = 0; k < 3; ++k ) {
-                if ( charArrayContains( edgeTriples[( int ) edgeIndexes[j]].indexes, 3, edgeTriples[i].indexes[k] ) ) {
-                    valid = false; 
-                    break;
+                if ( charArrayContains( tempTripleIndex1->indexes, 3, edgeToCheck->indexes[k] ) ) {
+                    valid = false;
                 }
             }
             if ( !valid ) {
@@ -395,30 +393,34 @@ static void puzzle_recEdgeSolve( const Puzzle* const puzzle, uint edgeIndexes[4]
         if ( !valid ) {
             continue;
         }
-        const char leftEdge = piece_getSide( puzzle->pieces[( int  ) edgeTriples[i].indexes[0]], LEFT );
+        const char leftEdge = piece_getSide( puzzle->pieces[( int  ) edgeToCheck->indexes[0]], LEFT );
         if ( leftEdge + leftCorner != 0  ){
             continue;
         }
-        const char rightEdge = piece_getSide( puzzle->pieces[( int ) edgeTriples[i].indexes[2]], RIGHT );
+        const char rightEdge = piece_getSide( puzzle->pieces[( int ) edgeToCheck->indexes[2]], RIGHT );
         if ( rightEdge + rightCorner != 0 ) {
             continue;
         }
         edgeIndexes[currentEdge] = i;
         if ( currentEdge == 3 ) {
             EdgeSolution tempEdgeSolution;
+            TripleIndex* topEdge = ( TripleIndex* ) da_getElement( edgeTriples, ( int ) edgeIndexes[0] );
+            TripleIndex* rightEdge = ( TripleIndex* ) da_getElement( edgeTriples, ( int ) edgeIndexes[1] );
+            TripleIndex* bottomEdge = ( TripleIndex* ) da_getElement( edgeTriples, ( int ) edgeIndexes[2] );
+            TripleIndex* leftEdge = ( TripleIndex* ) da_getElement( edgeTriples, ( int ) edgeIndexes[3] );
             for ( uint i = 0; i < 4; ++i ) {
                 tempEdgeSolution.cornerIndexes[i] = currentArrangement[i]; 
                 if ( i < 3 ) {
-                    tempEdgeSolution.topEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[0]].indexes[i];
-                    tempEdgeSolution.rightEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[1]].indexes[i];   
-                    tempEdgeSolution.bottomEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[2]].indexes[2 - i];   
-                    tempEdgeSolution.leftEdgeIndexes[i] = edgeTriples[ ( int ) edgeIndexes[3]].indexes[2 - i];   
+                    tempEdgeSolution.topEdgeIndexes[i] = topEdge->indexes[i];
+                    tempEdgeSolution.rightEdgeIndexes[i] = rightEdge->indexes[i];   
+                    tempEdgeSolution.bottomEdgeIndexes[i] = bottomEdge->indexes[2 - i];   
+                    tempEdgeSolution.leftEdgeIndexes[i] = leftEdge->indexes[2 - i];   
                 }
             }
             da_addElement( edgeSolutions, &tempEdgeSolution );
         } else {
             puzzle_recEdgeSolve( puzzle, edgeIndexes, currentArrangement, 
-                                edgeTriples, numEdgeTriples, currentEdge + 1,
+                                edgeTriples, currentEdge + 1,
                                 edgeSolutions );
         }
     }
@@ -694,36 +696,8 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
 void puzzle_shuffleUntilUniqueEdge( Puzzle* const puzzle ) {
     while ( true ) {
         puzzle_shuffle( puzzle );
-        const static char cornerArrangements[6][5] = { {0, 4, 20, 24, 0}, {0, 4, 24, 20, 0},
-            {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
-            {0, 24, 4, 20, 0}, {0, 24, 20, 4, 0} };
 
-        uint numValidEdges = 0;
-        const uint maxValidEdges = 2000;
-        TripleIndex validEdges[maxValidEdges];
-        puzzle_calculateValidEdges( puzzle, validEdges, &numValidEdges, maxValidEdges );
-        if ( numValidEdges < 4 ) {
-            printf( "Error in edge solver\n" );
-        }
-
-        //for all of the valid configurations, try all possible combinations of edges
-        uint numEdgeSolutions = 0;
-        uint maxEdgeSolutions = 10000000;
-        static bool allocatedEdges = false;
-        static EdgeSolution* edgeSolutions;
-        //terrible idea, no real way to free this after
-        if ( !allocatedEdges ) {
-            edgeSolutions = malloc( sizeof( EdgeSolution ) * maxEdgeSolutions );
-            allocatedEdges = true;
-        }
-        for ( uint i = 0; i < 6; ++i ) {
-            uint edges[4];
-
-            //puzzle_recEdgeSolve( puzzle, edges, cornerArrangements[i], 
-            //                    validEdges, numValidEdges, 0, edgeSolutions,
-            //                    &numEdgeSolutions, maxEdgeSolutions );
-        }
-
+/*
         bool valid = false;
         for ( uint i = 0; i < numEdgeSolutions; ++i ) {
             if ( edgeSolutionIsUnique( &edgeSolutions[i]) ) {
@@ -734,23 +708,24 @@ void puzzle_shuffleUntilUniqueEdge( Puzzle* const puzzle ) {
         if ( valid ) {
             return;
         }
+*/
     }
 }
 
-//TODO: rework the maxEdgeSolutions parameter. Thought is to make sure that the caller
-//can set the max, and supply an array large enough for it, but this would lead
-//to weird behaviour if called multiple times with different values
 void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edgeSolutions ) {
     //only 6 valid arangements of corners (top left, top right, bottom right, bottom left)
     const static char cornerArrangements[6][5] = { {0, 4, 20, 24, 0}, {0, 4, 24, 20, 0},
         {0, 20, 4, 24, 0}, {0, 20, 24, 4, 0},
         {0, 24, 4, 20, 0}, {0, 24, 20, 4, 0} };
     //get the valid triplets of edges
-    uint numValidEdges = 0;
-    const uint maxValidEdges = 2000;
-    TripleIndex validEdges[maxValidEdges];
-    puzzle_calculateValidEdges( puzzle, validEdges, &numValidEdges, maxValidEdges );
-    if ( numValidEdges < 4 ) {
+    static bool allocatedEdges = false;
+    static DynamicArray* validEdges;
+    if ( !allocatedEdges ) {
+        validEdges = da_create( 2000, sizeof( TripleIndex ) );
+        allocatedEdges = true;
+    }
+    puzzle_calculateValidEdges( puzzle, validEdges );
+    if ( validEdges->numElements < 4 ) {
         printf( "Error in edge solver\n" );
     }
 
@@ -759,7 +734,7 @@ void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edge
     for ( uint i = 0; i < 6; ++i ) {
         uint edges[4];
         puzzle_recEdgeSolve( puzzle, edges, cornerArrangements[i], 
-                            validEdges, numValidEdges, 0, edgeSolutions );
+                            validEdges, 0, edgeSolutions );
     }
 }
 
