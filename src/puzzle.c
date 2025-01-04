@@ -763,6 +763,21 @@ void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edge
     }
 }
 
+void findValidCentersForEdge( const Puzzle* const puzzle, const EdgeSolution* edgeSolution,
+                              DynamicArray* centerSolutions ) {
+    static bool allocatedCenters = false;
+    DynamicArray* validCenterRows;
+    if ( !allocatedCenters ) {
+        validCenterRows = da_create( 4000, sizeof( TripleIndex ) );
+        allocatedCenters = true;
+    }
+    puzzle_calculateValidCenterRows( puzzle, edgeSolution, validCenterRows );
+    uint centerIndexes[3];
+    puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, validCenterRows,
+                           0, centerSolutions );
+
+}
+
 void puzzle_findValidSolutions( const Puzzle* const puzzle,
                                PuzzleSolution* const otherSolutions,
                                uint* const numOtherSolutions, const uint maxOtherSolutions,
@@ -778,19 +793,6 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
 
     puzzle_findValidEdges( puzzle, edgeSolutions );
 
-/*
-    bool valid = false;
-    for ( uint i = 0; i < numEdgeSolutions; ++i ) {
-        if ( edgeSolutionIsUnique( &edgeSolutions[i]) ) {
-            valid = true;
-            break;
-        }
-    }
-    if ( !valid ) {
-        return;
-    }
-*/
-
     static bool allocatedCenters = false;
     DynamicArray* centerSolutions;
     if ( !allocatedCenters ) {
@@ -800,14 +802,9 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
     *maxUniqueIndexes = 0;
     *maxUniqueSides = 0;
     for ( uint i = 0; i < edgeSolutions->numElements; ++i ) {
-        DynamicArray* validCenterRows = da_create( 4000, sizeof( TripleIndex ) );
-        puzzle_calculateValidCenterRows( puzzle, ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
-                                         validCenterRows );
-        uint centerIndexes[3];
         uint temp = centerSolutions->numElements;
-        puzzle_recCenterSolve( puzzle, centerIndexes,
-                              ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
-                              validCenterRows, 0, centerSolutions );
+        findValidCentersForEdge( puzzle, ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
+                                 centerSolutions );
         for  ( uint j = temp; j < centerSolutions->numElements; ++j ) {
             PuzzleSolution solution;
             puzzle_convertEdgeCenterToSolution( &solution,
