@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "da.h"
 #include "pieces.h"
 
 typedef struct PuzzleSolution {
@@ -12,6 +13,7 @@ typedef struct PuzzleSolution {
 
 bool twoIndexesOriginallyTouched( const char index1, const char index2 );
 void puzzle_printSolution( const PuzzleSolution* const solution );
+void puzzle_findSolutionsUniqueEdges();
 
 /*
  * Holds the information about a Puzzle instance. 
@@ -31,8 +33,8 @@ typedef struct Puzzle {
     uint numUniqueConnectors; 
 } Puzzle;
 
-void puzzle_shuffleUntilUniqueEdge( Puzzle* const puzzle );
 void puzzle_mutateCenter( Puzzle* const destPuzzle, const Puzzle* const srcPuzzle, const uint minMutations, const uint maxMutations );
+void puzzle_shuffleUntilUniqueEdge( Puzzle* const puzzle, DynamicArray* edgeSolutions );
 
 /*
  * Create a Puzzle that contains numUniqueConnectors amount of different connections

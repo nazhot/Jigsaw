@@ -538,24 +538,6 @@ static void puzzle_calculateOriginalConnections( const Puzzle* const puzzle,
     }
 }
 
-void puzzle_shuffleUntilUniqueEdge( Puzzle* const puzzle ) {
-    while ( true ) {
-        puzzle_shuffle( puzzle );
-
-/*
-        bool valid = false;
-        for ( uint i = 0; i < numEdgeSolutions; ++i ) {
-            if ( edgeSolutionIsUnique( &edgeSolutions[i]) ) {
-                valid = true;
-                break;
-            }
-        }
-        if ( valid ) {
-            return;
-        }
-*/
-    }
-}
 
 void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edgeSolutions ) {
     //only 6 valid arangements of corners (top left, top right, bottom right, bottom left)
@@ -762,7 +744,7 @@ void puzzle_mutateCenter( Puzzle* const destPuzzle, const Puzzle* const srcPuzzl
             }
         }
     }
-    puzzle_setPieces( destPuzzle );
+    puzzle_setPieces2( destPuzzle );
 }
 
 void puzzle_shuffle( Puzzle* const puzzle ) {
@@ -794,7 +776,7 @@ void puzzle_shuffle( Puzzle* const puzzle ) {
 
     rand_shuffle( puzzle->connections, 40, sizeof( char ) );
 
-    puzzle_setPieces( puzzle );
+    puzzle_setPieces2( puzzle );
 }
 
 Puzzle* puzzle_create( const uint numUniqueConnectors ) {
@@ -831,7 +813,7 @@ void puzzle_mutate( Puzzle* const destPuzzle, const Puzzle* const srcPuzzle,
             }
         }
     }
-    puzzle_setPieces( destPuzzle );
+    puzzle_setPieces2( destPuzzle );
 }
 
 typedef struct PuzzleSum {
@@ -967,4 +949,167 @@ void puzzle_free( Puzzle* const puzzle ) {
         return;
     }
     free( puzzle );
+}
+
+void puzzle_findValidSolutions2( const Puzzle* const puzzle, DynamicArray* const edgeSolutions,
+                               PuzzleSolution* const otherSolutions,
+                               uint* const numOtherSolutions, const uint maxOtherSolutions,
+                               uint* const maxUniqueIndexes, uint* const maxUniqueSides ) {
+    static DynamicArray* centerSolutions;
+    static bool allocatedArrays = false;
+    if ( !allocatedArrays ) {
+        //terrible idea, no real way to free this after
+        centerSolutions = da_create( 2000, sizeof( CenterSolution ) );
+        allocatedArrays = true;
+    }
+
+    centerSolutions->numElements = 0;
+
+    *maxUniqueIndexes = 0;
+    *maxUniqueSides = 0;
+    for ( uint i = 0; i < edgeSolutions->numElements; ++i ) {
+        uint temp = centerSolutions->numElements;
+        findValidCentersForEdge( puzzle, ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
+                                 centerSolutions );
+        for  ( uint j = temp; j < centerSolutions->numElements; ++j ) {
+            PuzzleSolution solution;
+            puzzle_convertEdgeCenterToSolution( &solution,
+                                                ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
+                                                ( CenterSolution* ) da_getElement( centerSolutions, j ) );
+            uint numIndexConnections = 0;
+            uint numSideConnections = 0;
+            puzzle_calculateOriginalConnections( puzzle, &solution,
+                                                &numIndexConnections,
+                                                &numSideConnections );
+            if ( numIndexConnections < 40 ) {
+                otherSolutions[*numOtherSolutions] = solution;
+                ++*numOtherSolutions;;
+                if ( ( 40 - numIndexConnections ) > *maxUniqueIndexes ) {
+                    *maxUniqueIndexes = 40 - numIndexConnections;
+                }
+                if ( ( 40 - numSideConnections ) > *maxUniqueSides ) {
+                    *maxUniqueSides = 40 - numSideConnections;
+                }
+                if ( *numOtherSolutions == maxOtherSolutions ) {
+                    fprintf( stderr, "Too many total solutions\n" );
+                    exit( 1 );
+                }
+            }
+            if ( *numOtherSolutions > 1 ) {
+                return;
+            }
+        }
+    }
+}
+
+void puzzle_shuffleUntilUniqueEdge( Puzzle* const puzzle, DynamicArray* edgeSolutions ) {
+    while ( true ) {
+        puzzle_shuffle( puzzle );
+
+        edgeSolutions->numElements = 0;
+
+        puzzle_findValidEdges(puzzle, edgeSolutions);
+
+        bool valid = false;
+        for ( uint i = 0; i < edgeSolutions->numElements; ++i ) {
+            if ( edgeSolutionIsUnique( ( EdgeSolution* ) da_getElement( edgeSolutions, i )) ) {
+                valid = true;
+                break;
+            }
+        }
+        if ( valid ) {
+            return;
+        }
+    }
+}
+
+void puzzle_shuffleCenter( Puzzle* const puzzle ) {
+    const static uint validCenterConnections[24] = { 21, 22, 23, 1, 6, 11, 16, 2, 7, 12, 17,
+                                                   3, 8, 13, 18, 26, 27, 28, 31, 32, 33,
+                                                   36, 37, 38 };
+    const static uint validEdgeConnections[16] = { 0, 5, 10, 15, 20, 25, 30, 35, 4, 9, 14, 19,
+                                                   24, 29, 34, 39 };
+
+    int connectionCounts[puzzle->numUniqueConnectors + 1];
+    for ( uint i = 1; i < puzzle->numUniqueConnectors + 1; ++i ) {
+        connectionCounts[i] = 0;
+    }
+    for ( uint i = 0; i < 16; ++i ) {
+        ++connectionCounts[puzzle->connections[validEdgeConnections[i]]];
+    }
+
+    uint tempCenterConnections[24];
+    uint numAdded = 0;
+    for ( uint i = 1; i < puzzle->numUniqueConnectors + 1; ++i ) {
+        for ( int j = 0; j < ( 2 - connectionCounts[i] ); ++j ) {
+            tempCenterConnections[numAdded] = i;
+            ++numAdded;
+        }
+    }
+
+    for ( uint i = numAdded; i < 24; ++i ) {
+        tempCenterConnections[i] = rand_intBetween( 1, puzzle->numUniqueConnectors + 1 );
+    }
+
+    rand_shuffle( tempCenterConnections, 24, sizeof( int ) );
+    for ( uint i = 0; i < 24; ++i ) {
+        puzzle->connections[validCenterConnections[i]] = tempCenterConnections[i];
+    }
+    
+    puzzle_setPieces2( puzzle );
+}
+
+void puzzle_findSolutionsUniqueEdges() {
+    Puzzle* puzzle = puzzle_create( 7 );
+    DynamicArray* edgeSolutions = da_create( 10000, sizeof( EdgeSolution ) );
+    puzzle_shuffleUntilUniqueEdge( puzzle, edgeSolutions );
+    Puzzle* temp = malloc( sizeof( Puzzle ) );
+
+    uint count = 0;
+    uint bestSum = 0;
+    uint bestSides = 0;
+    uint bestIndexes = 0;
+    bool foundBest = false;
+    while ( true ) {
+        uint maxUniqueIndexes = 0;
+        uint maxUniqueSides = 0;
+        uint maxOtherSolutions = 100;
+        uint numOtherSolutions = 0;
+        PuzzleSolution solutions[maxOtherSolutions];
+        puzzle_findValidSolutions2( puzzle, edgeSolutions, solutions,
+                                  &numOtherSolutions, maxOtherSolutions,
+                                  &maxUniqueIndexes, &maxUniqueSides );
+        if ( numOtherSolutions == 1 ) {
+            uint sum = maxUniqueSides + maxUniqueIndexes;
+            if ( sum > bestSum ) {
+                foundBest = true;
+                count = 0;
+                bestSum = sum;
+                printf( "Found puzzle with only 1 other solution!\n" );
+                puzzle_printSolution( &solutions[0] );
+                printf( "%i: %i sides + %i indexes\n", sum, maxUniqueSides, maxUniqueIndexes );
+                for ( uint j = 0; j < 40; ++j ) {
+                    if ( j ) {
+                        printf( ", " );
+                    }
+                    printf( "%i", puzzle->connections[j] );
+                }
+                printf( "\n" );
+            }
+            
+        }
+        if ( foundBest ) {
+            puzzle_mutateCenter( temp, puzzle, 1, 6 );
+            memcpy( puzzle, temp, sizeof( Puzzle ) );
+        } else {
+            puzzle_shuffleCenter( puzzle );
+        }
+        //memcpy( puzzle, temp, sizeof( Puzzle ) );
+        ++count;
+        if ( count == 1000 ) {
+            foundBest = false;
+            count = 0;
+            puzzle_shuffleUntilUniqueEdge( puzzle, edgeSolutions );
+        }
+    }
 }
