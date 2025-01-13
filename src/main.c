@@ -2,14 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "benchmark.h"
 #include "puzzle.h"
 #include "pieces.h"
 
 int main( int argc, char *argv[] ) {
+    benchmark_puzzleSolve( 50000, "Initial PuzzleSolve, no modifications, no debug, level 3 optimizations" );
+
+    exit( 0 );
+
 
     srand( time( NULL ) );
 
-    const uint numUniqueConnections = 7;
+    const uint numUniqueConnections = 10;
     const uint generationSize = 5000;
     const uint numGenerations = 1000000;
     const uint numSurivors = 5;
@@ -17,11 +22,11 @@ int main( int argc, char *argv[] ) {
     const uint minMutations = 1;
     const uint maxMutations = 6;
 
-    //puzzle_findMostUniqueSolution( numUniqueConnections, generationSize, numGenerations,
-    //                               numSurivors, numChildren, minMutations, maxMutations );
+    puzzle_findMostUniqueSolution( numUniqueConnections, generationSize, numGenerations,
+                                   numSurivors, numChildren, minMutations, maxMutations );
 
 
-    puzzle_findSolutionsUniqueEdges();
+    //puzzle_findSolutionsUniqueEdges();
 
     exit( 0 );
 

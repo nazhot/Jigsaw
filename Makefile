@@ -24,8 +24,8 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
-CFLAGS := $(INC_FLAGS) -MMD -MP -Wall -g
-LDFLAGS := -g
+override CFLAGS := $(INC_FLAGS) -MMD -MP -Wall $(CFLAGS)
+override LDFLAGS := $(LDFLAGS)
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
@@ -44,6 +44,14 @@ clean:
 	touch $(BUILD_DIR)/.gitignore
 	printf "*\n!.gitignore" >> $(BUILD_DIR)/.gitignore 
 	make
+
+.PNONY: debug
+debug:
+	make clean CFLAGS="-g -Og" LDFLAGS="-g -Og"
+
+.PHONY: optimize
+optimize:
+	make clean CFLAGS="-O3" LDFLAGS="-O3"
 
 .PHONY: run
 run:
