@@ -3,6 +3,45 @@
 #include <time.h>
 #include "benchmark.h"
 #include "puzzle.h"
+#include "rand.h"
+
+void generateEdge( const uint numUniqueConnections ) {
+    const uint numEdgeConnections = 16;
+    const uint numTotalConnections = 40;
+    const uint maxTotal = numTotalConnections - ( numUniqueConnections * 2 ) + 2;
+    const uint maxUniqueConnectionsInEdge = numUniqueConnections > numEdgeConnections / 2 ? numEdgeConnections / 2 : numUniqueConnections;
+    uint minUniqueConnectionsInEdge;
+    if ( maxTotal >= numEdgeConnections ) {
+        minUniqueConnectionsInEdge = 1;
+    } else {
+        minUniqueConnectionsInEdge = numEdgeConnections / maxTotal;
+        if ( numEdgeConnections % maxTotal ) {
+            ++minUniqueConnectionsInEdge;
+        }
+    }
+    printf( "%u, %u, %u\n", numUniqueConnections, maxTotal, minUniqueConnectionsInEdge );
+
+    const uint numUniqueEdgeConnections = rand_intBetween( minUniqueConnectionsInEdge,
+                                                           maxUniqueConnectionsInEdge + 1 );
+    const uint numRemainingEdges = numEdgeConnections - ( numUniqueEdgeConnections * 2 );
+    uint edgeCounts[numUniqueEdgeConnections];
+    for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
+        edgeCounts[i] = 2;
+    }
+
+    for ( uint i = 0; i < numRemainingEdges; ++i ) {
+        const uint index = rand_index( numUniqueEdgeConnections );
+        ++edgeCounts[index];
+    }
+
+    for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
+        printf( "%u: %u\n", i, edgeCounts[i] );
+    }
+
+}
+
+
+
 
 void benchmark_puzzleSolve( const uint numPuzzles, const char* const description ) {
     srand( 0 );
