@@ -8,18 +8,12 @@
 void generateEdge( const uint numUniqueConnections ) {
     const uint numEdgeConnections = 16;
     const uint numTotalConnections = 40;
+    const uint numCenterConnections = numTotalConnections - numEdgeConnections;
     const uint maxTotal = numTotalConnections - ( numUniqueConnections * 2 ) + 2;
-    const uint maxUniqueConnectionsInEdge = numUniqueConnections > numEdgeConnections / 2 ? numEdgeConnections / 2 : numUniqueConnections;
-    uint minUniqueConnectionsInEdge;
-    if ( maxTotal >= numEdgeConnections ) {
-        minUniqueConnectionsInEdge = 1;
-    } else {
-        minUniqueConnectionsInEdge = numEdgeConnections / maxTotal;
-        if ( numEdgeConnections % maxTotal ) {
-            ++minUniqueConnectionsInEdge;
-        }
-    }
-    printf( "%u, %u, %u\n", numUniqueConnections, maxTotal, minUniqueConnectionsInEdge );
+    const uint maxUniqueConnectionsInEdge = numUniqueConnections > ( numEdgeConnections / 2 ) ? numEdgeConnections / 2 : numUniqueConnections;
+    const uint minUniqueConnectionsInEdge = numUniqueConnections <= ( numCenterConnections / 2 ) ? 
+                                            1 : numUniqueConnections - ( numCenterConnections / 2 );
+    printf( "%u: %u, %u, %u\n", numUniqueConnections, maxTotal, minUniqueConnectionsInEdge, maxUniqueConnectionsInEdge );
 
     const uint numUniqueEdgeConnections = rand_intBetween( minUniqueConnectionsInEdge,
                                                            maxUniqueConnectionsInEdge + 1 );
