@@ -34,10 +34,16 @@ void generateEdge( const uint numUniqueConnections ) {
         ++edgeCounts[index];
     }
 
+    uint edgeConnections[numEdgeConnections];
+    uint count = 0;
     for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
-        printf( "%u: %u\n", i, edgeCounts[i] );
+        for ( uint j  = 0; j < edgeCounts[i]; ++j ) {
+            edgeConnections[count] = i;
+            ++count;
+        }
     }
 
+    rand_shuffle( edgeConnections, numEdgeConnections, sizeof( uint ) );
 }
 
 
