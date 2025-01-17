@@ -54,14 +54,11 @@ void rand_shuffle( void *array, size_t numElements, ssize_t elementSize ) {
     }
 
     int randIndex;
-    void *temp = malloc( elementSize ); 
+    char temp[elementSize];
     for ( int i = numElements - 1; i >= 1; --i ) {
         randIndex = rand_index( i + 1 );
         memcpy( temp, &array[i * elementSize], elementSize );
         memcpy( &array[i * elementSize], &array[randIndex * elementSize], elementSize );
         memcpy( &array[randIndex * elementSize], temp, elementSize );
     }
-
-    
-
 }

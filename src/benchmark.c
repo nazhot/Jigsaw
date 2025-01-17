@@ -26,7 +26,7 @@ void generateEdge( const uint numUniqueConnections ) {
         edgeCounts[i] = 2;
     }
 
-    uint maxEdgeCount = 0;
+    uint maxEdgeCount = 2;
     for ( uint i = 0; i < numRemainingEdges; ++i ) {
         const uint index = rand_index( numUniqueEdgeConnections );
         ++edgeCounts[index];
@@ -66,7 +66,6 @@ void generateEdge( const uint numUniqueConnections ) {
         }
         printf( "\n" );
     }
-    printf( "\n" );
 
     uint centerConnections[numCenterConnections];
     count = 0;
@@ -99,7 +98,7 @@ void generateEdge( const uint numUniqueConnections ) {
         }
         printf( "%u", centerConnections[i] );
     }
-    printf( "\n" );
+    printf( "\n\n" );
 }
 
 
