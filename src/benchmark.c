@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "benchmark.h"
 #include "puzzle.h"
@@ -25,9 +26,13 @@ void generateEdge( const uint numUniqueConnections ) {
         edgeCounts[i] = 2;
     }
 
+    uint maxEdgeCount = 0;
     for ( uint i = 0; i < numRemainingEdges; ++i ) {
         const uint index = rand_index( numUniqueEdgeConnections );
         ++edgeCounts[index];
+        if ( edgeCounts[index] > maxEdgeCount ) {
+            maxEdgeCount = edgeCounts[index];
+        }
     }
 
     uint edgeConnections[numEdgeConnections];
@@ -40,6 +45,28 @@ void generateEdge( const uint numUniqueConnections ) {
     }
 
     rand_shuffle( edgeConnections, numEdgeConnections, sizeof( uint ) );
+    uint leftEdges[numUniqueEdgeConnections][maxEdgeCount];
+    uint leftEdgesCounts[numUniqueEdgeConnections];
+    memset( leftEdgesCounts, 0, sizeof( uint ) * numUniqueEdgeConnections );
+
+    for ( uint i = 0; i < numEdgeConnections; ++i ) {
+        const uint connection = edgeConnections[i];
+        leftEdges[connection][leftEdgesCounts[connection]] = leftEdgeIndexes[i];
+        ++leftEdgesCounts[connection];
+    }
+
+    printf( "Edge Connections/Indexes Arrays:\n" );
+    for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
+        printf( "%u: ", i );
+        for ( uint j = 0; j < leftEdgesCounts[i]; ++j ) {
+            if ( j ) {
+                printf( ", " );
+            }
+            printf( "%u", leftEdges[i][j] );
+        }
+        printf( "\n" );
+    }
+    printf( "\n" );
 
     uint centerConnections[numCenterConnections];
     count = 0;
