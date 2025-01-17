@@ -49,20 +49,36 @@ void generateEdge( const uint numUniqueConnections ) {
     uint leftEdgesCounts[numUniqueEdgeConnections];
     memset( leftEdgesCounts, 0, sizeof( uint ) * numUniqueEdgeConnections );
 
+    uint rightEdges[numUniqueEdgeConnections][maxEdgeCount];
+    uint rightEdgesCounts[numUniqueEdgeConnections];
+    memset( rightEdgesCounts, 0, sizeof( uint ) * numUniqueEdgeConnections );
+
     for ( uint i = 0; i < numEdgeConnections; ++i ) {
         const uint connection = edgeConnections[i];
         leftEdges[connection][leftEdgesCounts[connection]] = leftEdgeIndexes[i];
         ++leftEdgesCounts[connection];
+
+        rightEdges[connection][rightEdgesCounts[connection]] = rightEdgeIndexes[i];
+        ++rightEdgesCounts[connection];
     }
 
     printf( "Edge Connections/Indexes Arrays:\n" );
     for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
-        printf( "%u: ", i );
+        printf( "%u (Left): ", i );
         for ( uint j = 0; j < leftEdgesCounts[i]; ++j ) {
             if ( j ) {
                 printf( ", " );
             }
             printf( "%u", leftEdges[i][j] );
+        }
+        printf( "\n" );
+
+        printf( "%u (Right): ", i );
+        for ( uint j = 0; j < rightEdgesCounts[i]; ++j ) {
+            if ( j ) {
+                printf( ", " );
+            }
+            printf( "%u", rightEdges[i][j] );
         }
         printf( "\n" );
     }
