@@ -11,6 +11,7 @@ int main( int argc, char *argv[] ) {
         generateEdge( i );
     }
     exit( 0 );
+    
 
     benchmark_puzzleSolve( 50000, "Initial PuzzleSolve, no modifications, no debug, level 3 optimizations" );
 

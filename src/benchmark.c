@@ -6,6 +6,8 @@
 #include "rand.h"
 
 void generateEdge( const uint numUniqueConnections ) {
+    static const uint leftEdgeIndexes[16] = { 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5, 0 };
+    static const uint rightEdgeIndexes[16] = { 0, 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5 };
     const uint numEdgeConnections = 16;
     const uint numTotalConnections = 40;
     const uint numCenterConnections = numTotalConnections - numEdgeConnections;
@@ -38,6 +40,39 @@ void generateEdge( const uint numUniqueConnections ) {
     }
 
     rand_shuffle( edgeConnections, numEdgeConnections, sizeof( uint ) );
+
+    uint centerConnections[numCenterConnections];
+    count = 0;
+    for ( uint i = numUniqueEdgeConnections; i < numUniqueConnections; ++i ) {
+        for ( uint j = 0; j < 2; ++j ) {
+            centerConnections[count] = i;
+            ++count;
+        }
+    }
+
+    for ( uint i = count; i < numCenterConnections; ++i ) {
+        centerConnections[i] = rand_index( numUniqueConnections );
+    }
+
+    rand_shuffle( centerConnections, numCenterConnections, sizeof( uint ) );
+
+    printf( "Edge Connections:\n" );
+    for ( uint i = 0; i < numEdgeConnections; ++i ) {
+        if ( i ) {
+            printf( ", " );
+        }
+        printf( "%u", edgeConnections[i] );
+    }
+    printf( "\n" );
+
+    printf( "Center Connections:\n" );
+    for ( uint i = 0; i < numCenterConnections; ++i ) {
+        if ( i ) {
+            printf( ", " );
+        }
+        printf( "%u", centerConnections[i] );
+    }
+    printf( "\n" );
 }
 
 
