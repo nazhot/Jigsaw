@@ -53,6 +53,10 @@ debug:
 optimize:
 	make clean CFLAGS="-O3" LDFLAGS="-O3"
 
+.PHONY: profile
+profile:
+	make clean CFLAGS="-pg" LDFLAGS="-pg"
+
 .PHONY: run
 run:
 	make

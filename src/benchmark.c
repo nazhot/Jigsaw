@@ -16,13 +16,12 @@ void generateEdge( const uint numUniqueConnections ) {
     const uint maxUniqueConnectionsInEdge = numUniqueConnections > ( numEdgeConnections / 2 ) ? numEdgeConnections / 2 : numUniqueConnections;
     const uint minUniqueConnectionsInEdge = numUniqueConnections <= ( numCenterConnections / 2 ) ? 
                                             1 : numUniqueConnections - ( numCenterConnections / 2 );
-    printf( "%u: %u, %u, %u\n", numUniqueConnections, maxTotal, minUniqueConnectionsInEdge, maxUniqueConnectionsInEdge );
 
     const uint numUniqueEdgeConnections = rand_intBetween( minUniqueConnectionsInEdge,
                                                            maxUniqueConnectionsInEdge + 1 );
-
     uint edgeConnections[numEdgeConnections];
     uint count = 0;
+
     for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
         for ( uint j  = 0; j < 2; ++j ) {
             edgeConnections[count] = i;
@@ -53,27 +52,6 @@ void generateEdge( const uint numUniqueConnections ) {
         ++rightEdgesCounts[connection];
     }
 
-    printf( "Edge Connections/Indexes Arrays:\n" );
-    for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
-        printf( "%u (Left): ", i );
-        for ( uint j = 0; j < leftEdgesCounts[i]; ++j ) {
-            if ( j ) {
-                printf( ", " );
-            }
-            printf( "%u", leftEdges[i][j] );
-        }
-        printf( "\n" );
-
-        printf( "%u (Right): ", i );
-        for ( uint j = 0; j < rightEdgesCounts[i]; ++j ) {
-            if ( j ) {
-                printf( ", " );
-            }
-            printf( "%u", rightEdges[i][j] );
-        }
-        printf( "\n" );
-    }
-
     uint centerConnections[numCenterConnections];
     count = 0;
     for ( uint i = numUniqueEdgeConnections; i < numUniqueConnections; ++i ) {
@@ -89,23 +67,9 @@ void generateEdge( const uint numUniqueConnections ) {
 
     rand_shuffle( centerConnections, numCenterConnections, sizeof( uint ) );
 
-    printf( "Edge Connections:\n" );
-    for ( uint i = 0; i < numEdgeConnections; ++i ) {
-        if ( i ) {
-            printf( ", " );
-        }
-        printf( "%u", edgeConnections[i] );
-    }
-    printf( "\n" );
-
-    printf( "Center Connections:\n" );
-    for ( uint i = 0; i < numCenterConnections; ++i ) {
-        if ( i ) {
-            printf( ", " );
-        }
-        printf( "%u", centerConnections[i] );
-    }
-    printf( "\n\n" );
+    uint centerContains[numUniqueConnections][numCenterConnections];
+    uint centerContainsCounts[numUniqueConnections];
+    memset( centerContainsCounts, 0, sizeof( uint ) * numUniqueConnections );
 }
 
 

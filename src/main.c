@@ -7,6 +7,7 @@
 #include "pieces.h"
 
 int main( int argc, char *argv[] ) {
+    /*
     for ( uint i = 1; i <= 20; ++i ) {
         generateEdge( i );
     }
@@ -16,13 +17,14 @@ int main( int argc, char *argv[] ) {
     benchmark_puzzleSolve( 50000, "Initial PuzzleSolve, no modifications, no debug, level 3 optimizations" );
 
     exit( 0 );
+    */
 
 
-    srand( time( NULL ) );
+    srand( 0 );
 
     const uint numUniqueConnections = 10;
     const uint generationSize = 5000;
-    const uint numGenerations = 1000000;
+    const uint numGenerations = 10;
     const uint numSurivors = 5;
     const uint numChildren = 800;
     const uint minMutations = 1;
