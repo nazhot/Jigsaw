@@ -8,7 +8,7 @@
 
 int main( int argc, char *argv[] ) {
     for ( uint i = 1; i <= 20; ++i ) {
-        generateEdge( i );
+        generateSwappablePuzzle( i );
     }
     exit( 0 );
     

@@ -3,7 +3,9 @@
 
 #include <stdlib.h>
 
-void generateEdge( const uint numUniqueConnections );
+void generateEdge( const uint numUniqueConnections, const uint numUniqueEdgeConnections,
+                   const uint* const edgeConnections );
+void generateSwappablePuzzle( const uint numUniqueConnections );
 void benchmark_puzzleSolve( const uint numPuzzles, const char* const description );
 
 #endif
