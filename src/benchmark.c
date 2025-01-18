@@ -20,36 +20,27 @@ void generateEdge( const uint numUniqueConnections ) {
 
     const uint numUniqueEdgeConnections = rand_intBetween( minUniqueConnectionsInEdge,
                                                            maxUniqueConnectionsInEdge + 1 );
-    const uint numRemainingEdges = numEdgeConnections - ( numUniqueEdgeConnections * 2 );
-    uint edgeCounts[numUniqueEdgeConnections];
-    for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
-        edgeCounts[i] = 2;
-    }
-
-    uint maxEdgeCount = 2;
-    for ( uint i = 0; i < numRemainingEdges; ++i ) {
-        const uint index = rand_index( numUniqueEdgeConnections );
-        ++edgeCounts[index];
-        if ( edgeCounts[index] > maxEdgeCount ) {
-            maxEdgeCount = edgeCounts[index];
-        }
-    }
 
     uint edgeConnections[numEdgeConnections];
     uint count = 0;
     for ( uint i = 0; i < numUniqueEdgeConnections; ++i ) {
-        for ( uint j  = 0; j < edgeCounts[i]; ++j ) {
+        for ( uint j  = 0; j < 2; ++j ) {
             edgeConnections[count] = i;
             ++count;
         }
     }
 
+    for ( uint i = count; i < numEdgeConnections; ++i ) {
+        edgeConnections[i] = rand_index( numUniqueEdgeConnections );
+    }
+
     rand_shuffle( edgeConnections, numEdgeConnections, sizeof( uint ) );
-    uint leftEdges[numUniqueEdgeConnections][maxEdgeCount];
+
+    uint leftEdges[numUniqueEdgeConnections][numEdgeConnections];
     uint leftEdgesCounts[numUniqueEdgeConnections];
     memset( leftEdgesCounts, 0, sizeof( uint ) * numUniqueEdgeConnections );
 
-    uint rightEdges[numUniqueEdgeConnections][maxEdgeCount];
+    uint rightEdges[numUniqueEdgeConnections][numEdgeConnections];
     uint rightEdgesCounts[numUniqueEdgeConnections];
     memset( rightEdgesCounts, 0, sizeof( uint ) * numUniqueEdgeConnections );
 
