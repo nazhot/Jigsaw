@@ -9,6 +9,13 @@
 void generateEdge( const uint numUniqueConnections ) {
     static const uint leftEdgeIndexes[16] = { 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5, 0 };
     static const uint rightEdgeIndexes[16] = { 0, 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5 };
+    static const int centerIndexes[24][2] = { { 6, -1 }, { 6, 7 }, { 7, 8 }, { 8, -1 },
+                                              { 11, -1 }, { 11, 12 }, { 12, 13 }, { 13, -1 },
+                                              { 16, -1 }, { 16, 17 }, { 17, 18 }, { 18, -1 },
+                                              { 6, -1 }, { 6, 11 }, { 11, 16 }, { 16, -1 },
+                                              { 7, -1 }, { 7, 12 }, { 12, 17 }, { 17, -1 },
+                                              { 8, -1 }, { 8, 13 }, { 13, 18 }, { 18, -1 } };
+    
     const uint numEdgeConnections = 16;
     const uint numTotalConnections = 40;
     const uint numCenterConnections = numTotalConnections - numEdgeConnections;
@@ -70,6 +77,30 @@ void generateEdge( const uint numUniqueConnections ) {
     uint centerContains[numUniqueConnections][numCenterConnections];
     uint centerContainsCounts[numUniqueConnections];
     memset( centerContainsCounts, 0, sizeof( uint ) * numUniqueConnections );
+
+    for ( uint i = 0; i < numCenterConnections; ++i ) {
+        const uint connection = centerConnections[i];
+        for ( uint j = 0; j < 2; ++j ) {
+            const int index = centerIndexes[i][j];
+            if ( index == -1 ) {
+                break;
+            }
+            centerContains[connection][centerContainsCounts[connection]] = centerIndexes[i][j];
+            ++centerContainsCounts[connection];
+        }
+    }
+
+    for ( uint i = 0; i < numUniqueConnections; ++i ) {
+        printf( "%u: ", i );
+        for ( uint j = 0; j < centerContainsCounts[i]; ++j ) {
+            if ( j ) {
+                printf( ", " );
+            }
+            printf( "%u", centerContains[i][j] );
+        }
+        printf( "\n" );
+    }
+
 }
 
 
