@@ -6,20 +6,21 @@
 #include "puzzle.h"
 #include "rand.h"
 
-void generateCenter( const uint numUniqueConnections, const uint numUniqueEdgeConnections,
-                     uint* const centerConnections, uint* const centerConnectionCounts ) {
+const uint numEdgeConnections = 16;
+const uint numTotalConnections = 40;
+const uint numCenterConnections = numTotalConnections - numEdgeConnections;
+
+static void generateCenter( const uint numUniqueConnections, const uint numUniqueEdgeConnections,
+                            const uint centerConnections[numCenterConnections],
+                            uint centerContains[numUniqueConnections][numCenterConnections], 
+                            uint centerContainsCounts[numUniqueConnections] ) {
     static const int centerIndexes[24][2] = { { 6, -1 }, { 6, 7 }, { 7, 8 }, { 8, -1 },
                                               { 11, -1 }, { 11, 12 }, { 12, 13 }, { 13, -1 },
                                               { 16, -1 }, { 16, 17 }, { 17, 18 }, { 18, -1 },
                                               { 6, -1 }, { 6, 11 }, { 11, 16 }, { 16, -1 },
                                               { 7, -1 }, { 7, 12 }, { 12, 17 }, { 17, -1 },
                                               { 8, -1 }, { 8, 13 }, { 13, 18 }, { 18, -1 } };
-    const uint numEdgeConnections = 16;
-    const uint numTotalConnections = 40;
-    const uint numCenterConnections = numTotalConnections - numEdgeConnections;
 
-    uint centerContains[numUniqueConnections][numCenterConnections];
-    uint centerContainsCounts[numUniqueConnections];
     memset( centerContainsCounts, 0, sizeof( uint ) * numUniqueConnections );
 
     for ( uint i = 0; i < numCenterConnections; ++i ) {
@@ -33,33 +34,18 @@ void generateCenter( const uint numUniqueConnections, const uint numUniqueEdgeCo
             ++centerContainsCounts[connection];
         }
     }
-
-    for ( uint i = 0; i < numUniqueConnections; ++i ) {
-        printf( "%u: ", i );
-        for ( uint j = 0; j < centerContainsCounts[i]; ++j ) {
-            if ( j ) {
-                printf( ", " );
-            }
-            printf( "%u", centerContains[i][j] );
-        }
-        printf( "\n" );
-    }
 }
 
-void generateEdge( const uint numUniqueConnections, const uint numUniqueEdgeConnections,
-                   const uint* const edgeConnections ) {
+static void generateEdge( const uint numUniqueConnections, const uint numUniqueEdgeConnections,
+                          const uint edgeConnections[numEdgeConnections],
+                          uint leftEdges[numUniqueEdgeConnections][numEdgeConnections],
+                          uint leftEdgesCounts[numUniqueEdgeConnections],
+                          uint rightEdges[numUniqueEdgeConnections][numEdgeConnections],
+                          uint rightEdgesCounts[numUniqueEdgeConnections] ) {
     static const uint leftEdgeIndexes[16] = { 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5, 0 };
     static const uint rightEdgeIndexes[16] = { 0, 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5 };
-    const uint numEdgeConnections = 16;
-    const uint numTotalConnections = 40;
-    const uint numCenterConnections = numTotalConnections - numEdgeConnections;
     
-    uint leftEdges[numUniqueEdgeConnections][numEdgeConnections];
-    uint leftEdgesCounts[numUniqueEdgeConnections];
     memset( leftEdgesCounts, 0, sizeof( uint ) * numUniqueEdgeConnections );
-
-    uint rightEdges[numUniqueEdgeConnections][numEdgeConnections];
-    uint rightEdgesCounts[numUniqueEdgeConnections];
     memset( rightEdgesCounts, 0, sizeof( uint ) * numUniqueEdgeConnections );
 
     for ( uint i = 0; i < numEdgeConnections; ++i ) {
@@ -73,9 +59,6 @@ void generateEdge( const uint numUniqueConnections, const uint numUniqueEdgeConn
 }
 
 void generateSwappablePuzzle( const uint numUniqueConnections ) {
-    const uint numEdgeConnections = 16;
-    const uint numTotalConnections = 40;
-    const uint numCenterConnections = numTotalConnections - numEdgeConnections;
     const uint maxTotal = numTotalConnections - ( numUniqueConnections * 2 ) + 2;
     const uint maxUniqueConnectionsInEdge = numUniqueConnections > ( numEdgeConnections / 2 ) ? numEdgeConnections / 2 : numUniqueConnections;
     const uint minUniqueConnectionsInEdge = numUniqueConnections <= ( numCenterConnections / 2 ) ? 
@@ -113,6 +96,32 @@ void generateSwappablePuzzle( const uint numUniqueConnections ) {
     }
 
     rand_shuffle( centerConnections, numCenterConnections, sizeof( uint ) );
+
+    uint leftEdges[numUniqueEdgeConnections][numEdgeConnections];
+    uint leftEdgesCounts[numUniqueEdgeConnections];
+
+    uint rightEdges[numUniqueEdgeConnections][numEdgeConnections];
+    uint rightEdgesCounts[numUniqueEdgeConnections];
+
+    generateEdge( numUniqueConnections, numUniqueEdgeConnections, edgeConnections,
+                  leftEdges, leftEdgesCounts, rightEdges, rightEdgesCounts );
+
+    uint centerContains[numUniqueConnections][numCenterConnections];
+    uint centerContainsCounts[numUniqueConnections];
+
+    generateCenter( numUniqueConnections, numUniqueEdgeConnections,
+                    centerConnections, centerContains, centerContainsCounts );
+
+    for ( uint i = 0; i < numUniqueConnections; ++i ) {
+        printf( "%u: ", i );
+        for ( uint j = 0; j < centerContainsCounts[i]; ++j ) {
+            if ( j ) {
+                printf( ", " );
+            }
+            printf( "%u", centerContains[i][j] );
+        }
+        printf( "\n" );
+    }
 }
 
 
