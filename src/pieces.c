@@ -8,10 +8,21 @@
 
 __inline__ Piece piece_create( const PieceType type, const uint index, const char top,
                                const char right, const char bottom, const char left ) {
-    return ( Piece ) { .sides = { [TOP] = top, [RIGHT] = right, [BOTTOM] = bottom,
+    Piece piece = ( Piece ) { .sides = { [TOP] = top, [RIGHT] = right, [BOTTOM] = bottom,
                                   [LEFT] = left },
-                       .type = type,
-                       .index = index };
+                              .type = type,
+                              .index = index,
+                              .bitfield = 0 };
+
+    piece.bitfield |= ( ( uint64_t ) 1 ) << top;
+    piece.bitfield |= ( ( uint64_t ) 1 ) << right;
+    piece.bitfield |= ( ( uint64_t ) 1 ) << bottom;
+    piece.bitfield |= ( ( uint64_t ) 1 ) << left;
+    return piece;
+}
+
+__inline__ bool piece_contains( const Piece piece, const char side ) {
+    return piece.bitfield >> side & 1;
 }
 
 __inline__ char piece_getSide( const Piece piece, const SideDirection side ) {

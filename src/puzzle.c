@@ -179,7 +179,6 @@ static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
                     continue;
                 }
                 const Piece third = puzzle->pieces[edgeIndexes[k]];
-
                 const char thirdLeft = piece_getSide( third, LEFT );
 
                 if ( !piece_piecesConnect( secondRight, thirdLeft ) ){ 
@@ -302,6 +301,10 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
             }
             const uint secondRotation = j % 4;
             const Piece secondPiece = puzzle->pieces[centerIndexes[secondIndex]];
+            if ( secondRotation == 0 && !piece_contains( secondPiece, firstRight ) ) {
+                j += 3;
+                continue;
+            }
             const char secondLeft = piece_getSideWithRotation( secondPiece, LEFT, secondRotation );
             if ( !piece_piecesConnect( firstRight, secondLeft ) ) {
                 continue;
@@ -314,6 +317,10 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                 }
                 const uint thirdRotation = k % 4;
                 const Piece thirdPiece = puzzle->pieces[centerIndexes[thirdIndex]];
+                if ( thirdRotation == 0 && !piece_contains( thirdPiece, secondRight ) ) {
+                    k += 3;
+                    continue;
+                }
                 const char thirdLeft = piece_getSideWithRotation( thirdPiece, LEFT, thirdRotation );
 
                 if ( !piece_piecesConnect( secondRight, thirdLeft ) ){

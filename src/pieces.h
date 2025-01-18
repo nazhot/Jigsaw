@@ -27,8 +27,10 @@ typedef struct Piece {
     char sides[4]; //top, right, bottom, left
     char index; //index of Piece within the original Puzzle (0 - 25, left to right
                 //top to bottom)
+    uint64_t bitfield;
 } Piece;
 
+bool piece_contains( const Piece piece, const char side );
 
 /*
  * Create a Piece with its type and sides

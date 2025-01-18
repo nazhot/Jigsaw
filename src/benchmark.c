@@ -10,6 +10,7 @@ const uint numEdgeConnections = 16;
 const uint numTotalConnections = 40;
 const uint numCenterConnections = numTotalConnections - numEdgeConnections;
 
+
 static void generateCenter( const uint numUniqueConnections, const uint numUniqueEdgeConnections,
                             const uint centerConnections[numCenterConnections],
                             uint centerContains[numUniqueConnections][numCenterConnections], 
@@ -112,16 +113,68 @@ void generateSwappablePuzzle( const uint numUniqueConnections ) {
     generateCenter( numUniqueConnections, numUniqueEdgeConnections,
                     centerConnections, centerContains, centerContainsCounts );
 
-    for ( uint i = 0; i < numUniqueConnections; ++i ) {
-        printf( "%u: ", i );
-        for ( uint j = 0; j < centerContainsCounts[i]; ++j ) {
-            if ( j ) {
-                printf( ", " );
-            }
-            printf( "%u", centerContains[i][j] );
+
+    uint validEdges[1320][3];
+    uint numValidEdges = 0;
+
+    static const uint cornerIndexes[4] = { 0, 4, 20, 24 };
+    static const uint edgeIndexes[12] = { 1, 2, 3, 5, 10, 15, 9, 14, 19, 21, 22, 23 };
+
+    //Right/Left refer to Right/Left of edge pieces
+/*
+    for ( uint i = 0; i < 12; ++i ) { //left
+
+        const Piece first = puzzle->pieces[edgeIndexes[i]];
+        const char firstLeft = piece_getSide( first, LEFT );
+
+        if ( !charArrayContains( validLefts, 4, firstLeft ) ) {
+            continue;
         }
-        printf( "\n" );
+
+        const char firstRight = piece_getSide( first, RIGHT );
+
+        for ( uint j = 0; j < 12; ++j ) {
+            if ( j == i ) {
+                continue;
+            }
+            const Piece second = puzzle->pieces[edgeIndexes[j]];
+            const char secondLeft = piece_getSide( second, LEFT );
+
+            if ( !piece_piecesConnect( secondLeft, firstRight ) ) {
+                continue;
+            }
+
+            const char secondRight = piece_getSide( second, RIGHT );
+
+            for ( uint k = 0; k < 12; ++k ) {
+                if ( i == k || j == k ) {
+                    continue;
+                }
+                const Piece third = puzzle->pieces[edgeIndexes[k]];
+                const char thirdLeft = piece_getSide( third, LEFT );
+
+                if ( !piece_piecesConnect( secondRight, thirdLeft ) ){ 
+                    continue;
+                }
+
+                const char thirdRight = piece_getSide( third, RIGHT );
+
+                if ( !charArrayContains( validRights, 4, thirdRight ) ) {
+                    continue; 
+                }
+
+                TripleIndex tempTripleIndex;
+
+                tempTripleIndex.indexes[0] = first.index;
+                tempTripleIndex.indexes[1] = second.index;
+                tempTripleIndex.indexes[2] = third.index;
+                
+                da_addElement( validEdges, &tempTripleIndex );
+            }
+        }
     }
+*/
+     
 }
 
 

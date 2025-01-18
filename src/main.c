@@ -7,6 +7,7 @@
 #include "pieces.h"
 
 int main( int argc, char *argv[] ) {
+    /*
     for ( uint i = 1; i <= 20; ++i ) {
         generateSwappablePuzzle( i );
     }
@@ -17,6 +18,7 @@ int main( int argc, char *argv[] ) {
 
     exit( 0 );
 
+    */
 
     srand( 0 );
 
