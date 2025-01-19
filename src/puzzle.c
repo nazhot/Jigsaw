@@ -116,22 +116,20 @@ static void printEdgeSolution( const EdgeSolution* edge ) {
 
 static bool charArrayContains( const char* const array, const uint arraySize,
                               const char value ) {
-    for ( uint i = 0; i < arraySize; ++i ) {
-        if ( array[i] == value ) {
-            return true;
-        }
+    bool contains = false;
+    for ( uint i = 0; !contains && i < arraySize; ++i ) {
+        contains = contains || ( array[i] == value );
     }
-    return false;
+    return contains;
 }
 
 static bool uintArrayContains( const uint* const array, const uint arraySize,
                               const uint value ) {
-    for ( uint i = 0; i < arraySize; ++i ) {
-        if ( array[i] == value ) {
-            return true;
-        }
+    bool contains = false;
+    for ( uint i = 0; !contains && i < arraySize; ++i ) {
+        contains = contains || ( array[i] == value );
     }
-    return false;
+    return contains;
 }
 
 static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
