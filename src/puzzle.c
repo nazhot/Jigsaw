@@ -134,6 +134,74 @@ static bool uintArrayContains( const uint* const array, const uint arraySize,
     return false;
 }
 
+static void puzzle_calculateValidEdgesStack( const Puzzle* const puzzle,
+                                             DynamicArray* const validEdges ) {
+    static const uint cornerIndexes[4] = { 0, 4, 20, 24 };
+    static const uint edgeIndexes[12] = { 1, 2, 3, 5, 10, 15, 9, 14, 19, 21, 22, 23 };
+    //Right/Left refer to Right/Left of edge pieces
+    char validLefts[4] = {0};
+    char validRights[4] = {0};
+    for ( uint i = 0; i < 4; ++i ) {
+        const Piece corner = puzzle->pieces[cornerIndexes[i]];
+        //validLefts[i] = -piece_getSide( corner, RIGHT );
+        //validRights[i] = -piece_getSide( corner, LEFT );
+        validLefts[i] = piece_getSide( corner, RIGHT );
+        validRights[i] = piece_getSide( corner, LEFT );
+    }
+
+    validEdges->numElements = 0;
+    typedef struct {
+        char lastRight;
+        uint indexes[3];
+        uint numEdges;
+    } StackParams;
+
+    static StackParams stack[5000];
+    int stackSize = 1;
+    stack[0] = ( StackParams ) { .numEdges = 0 };
+
+    while ( stackSize > 0 ) {
+        StackParams parameters = stack[--stackSize];
+        for ( uint i = 0; i < 12; ++i ) {
+            if ( parameters.numEdges &&
+                 uintArrayContains( parameters.indexes, parameters.numEdges, i ) ) {
+                continue;
+            }
+
+            const Piece piece = puzzle->pieces[edgeIndexes[i]];
+            const char leftSide = piece_getSide( piece, LEFT );
+
+            if ( parameters.numEdges == 0 ) {
+                if ( !charArrayContains( validLefts, 4, leftSide ) ) {
+                    continue;
+                }
+            } else if ( !piece_piecesConnect( leftSide, parameters.lastRight ) ) {
+                continue;
+            }
+
+            const char rightSide = piece_getSide( piece, RIGHT );
+
+            if ( parameters.numEdges == 2 ) {
+                if ( !charArrayContains( validRights, 4, rightSide ) ) {
+                    continue;
+                }
+                parameters.indexes[2] = i;
+                TripleIndex tempTriple;
+                for ( uint j = 0; j < 3; ++j ) {
+                    tempTriple.indexes[j] = edgeIndexes[parameters.indexes[j]];
+                }
+                da_addElement( validEdges, &tempTriple );
+                continue;
+            }
+            parameters.indexes[parameters.numEdges] = i;
+            stack[stackSize] = ( StackParams ) { .lastRight = rightSide,
+                                                 .numEdges = parameters.numEdges + 1 };
+            memcpy( stack[stackSize].indexes, parameters.indexes, sizeof( uint ) * 3 );
+            ++stackSize;
+        }
+    }
+}
+
 static void puzzle_calculateValidEdges( const Puzzle* const puzzle,
                                         DynamicArray* const validEdges ) {
     static const uint cornerIndexes[4] = { 0, 4, 20, 24 };
@@ -629,7 +697,7 @@ void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edge
         allocatedEdges = true;
     }
 
-    puzzle_calculateValidEdges( puzzle, validEdges );
+    puzzle_calculateValidEdgesStack( puzzle, validEdges );
 
     if ( validEdges->numElements < 4 ) {
         printf( "Error in edge solver\n" );
@@ -642,14 +710,6 @@ void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edge
         puzzle_recEdgeSolve( puzzle, edges, cornerArrangements[i], 
                             validEdges, 0, edgeSolutions );
     }
-}
-
-static void findValidCentersForEdge2( const Puzzle* const puzzle, const EdgeSolution* edgeSolution,
-                               const DynamicArray* const validCenterRows,
-                               DynamicArray* centerSolutions ) {
-    uint centerIndexes[3];
-    puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, validCenterRows,
-                           0, centerSolutions );
 }
 
 void findValidCentersForEdge( const Puzzle* const puzzle, const EdgeSolution* edgeSolution,
@@ -686,17 +746,15 @@ void puzzle_findValidSolutions( const Puzzle* const puzzle,
 
     edgeSolutions->numElements = 0;
     centerSolutions->numElements = 0;
-    validCenterRows->numElements = 0;
 
     puzzle_findValidEdges( puzzle, edgeSolutions );
-    puzzle_calculateValidCenterRowsNoEdge( puzzle, validCenterRows );
 
     *maxUniqueIndexes = 0;
     *maxUniqueSides = 0;
     for ( uint i = 0; i < edgeSolutions->numElements; ++i ) {
         uint temp = centerSolutions->numElements;
-        findValidCentersForEdge2( puzzle, ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
-                                 validCenterRows, centerSolutions );
+        findValidCentersForEdge( puzzle, ( EdgeSolution* ) da_getElement( edgeSolutions, i ),
+                                 centerSolutions );
         for  ( uint j = temp; j < centerSolutions->numElements; ++j ) {
             PuzzleSolution solution;
             puzzle_convertEdgeCenterToSolution( &solution,
