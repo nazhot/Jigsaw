@@ -25,8 +25,6 @@ int main( int argc, char *argv[] ) {
     const uint numUniqueConnections = 10;
     const uint generationSize = 5000;
     const uint numGenerations = 10;
-    //const uint generationSize = 5000;
-    //const uint numGenerations = 100000;
     const uint numSurivors = 5;
     const uint numChildren = 800;
     const uint minMutations = 1;

@@ -422,33 +422,33 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
             continue;
         }
         const char firstRight = piece_getSideWithRotation( firstPiece, RIGHT, firstRotation );
-        for ( uint j = 0; j < validNeighborsCount[firstIndex] * 4; ++j ) {
-            const uint secondIndex = validNeighbors[firstIndex][j/4];
-            //if ( firstIndex == secondIndex ) {
-            //    continue;
-            //}
+        for ( uint j = 0; j < 36; ++j ) {
+            const uint secondIndex = j/4;
+            if ( firstIndex == secondIndex ) {
+                continue;
+            }
             const uint secondRotation = j % 4;
             const Piece secondPiece = puzzle->pieces[centerIndexes[secondIndex]];
-            //if ( secondRotation == 0 && !piece_contains( secondPiece, firstRight ) ) {
-            //    j += 3;
-            //    continue;
-            //}
+            if ( secondRotation == 0 && !piece_contains( secondPiece, firstRight ) ) {
+                j += 3;
+                continue;
+            }
             const char secondLeft = piece_getSideWithRotation( secondPiece, LEFT, secondRotation );
             if ( !piece_piecesConnect( firstRight, secondLeft ) ) {
                 continue;
             }
             const char secondRight = piece_getSideWithRotation( secondPiece, RIGHT, secondRotation );
-            for ( uint k = 0; k < validNeighborsCount[secondIndex] * 4; ++k ) {
-                const uint thirdIndex = validNeighbors[secondIndex][k/4];
-                if ( thirdIndex == firstIndex ) {
+            for ( uint k = 0; k < 36; ++k ) {
+                const uint thirdIndex = k / 4;
+                if ( thirdIndex == secondIndex || thirdIndex == firstIndex ) {
                     continue;
                 }
                 const uint thirdRotation = k % 4;
                 const Piece thirdPiece = puzzle->pieces[centerIndexes[thirdIndex]];
-                //if ( thirdRotation == 0 && !piece_contains( thirdPiece, secondRight ) ) {
-                //    k += 3;
-                //    continue;
-                //}
+                if ( thirdRotation == 0 && !piece_contains( thirdPiece, secondRight ) ) {
+                    k += 3;
+                    continue;
+                }
                 const char thirdLeft = piece_getSideWithRotation( thirdPiece, LEFT, thirdRotation );
 
                 if ( !piece_piecesConnect( secondRight, thirdLeft ) ){
@@ -466,7 +466,7 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                     }
                 }
 
-                if ( !charArrayContains( validRights, 3, thirdRight ) ) {
+                if (!valid ) { // !charArrayContains( validRights, 3, thirdRight ) ) {
                     continue;
                 }
 
@@ -699,7 +699,8 @@ void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edge
         allocatedEdges = true;
     }
 
-    puzzle_calculateValidEdgesStack( puzzle, validEdges );
+    puzzle_calculateValidEdges( puzzle, validEdges );
+    //puzzle_calculateValidEdgesStack( puzzle, validEdges );
 
     if ( validEdges->numElements < 4 ) {
         printf( "Error in edge solver\n" );
@@ -744,7 +745,6 @@ void findValidCentersForEdge( const Puzzle* const puzzle, const EdgeSolution* ed
     uint centerIndexes[3];
     puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, validCenterRows,
                            0, centerSolutions );
-
 }
 
 void puzzle_findValidSolutions( const Puzzle* const puzzle,
