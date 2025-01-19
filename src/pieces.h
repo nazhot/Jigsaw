@@ -31,6 +31,7 @@ typedef struct Piece {
 } Piece;
 
 bool piece_contains( const Piece piece, const char side );
+bool piece_canBeNeighbors( const Piece piece1, const Piece piece2 );
 
 /*
  * Create a Piece with its type and sides

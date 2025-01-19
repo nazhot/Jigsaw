@@ -394,7 +394,9 @@ static void puzzle_calculateValidCenterRowsNoEdge( const Puzzle* const puzzle,
 
 static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                                             const EdgeSolution* edgeSolution,
-                                            DynamicArray* const validCenterRows ) {
+                                            DynamicArray* const validCenterRows,
+                                            const uint validNeighbors[9][9],
+                                            const uint validNeighborsCount[9] ) {
     static const uint centerIndexes[9] = { 6, 7, 8, 11, 12, 13, 16, 17, 18 };
 
     //Right/Left refer to Right/Left of edge pieces
@@ -420,33 +422,33 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
             continue;
         }
         const char firstRight = piece_getSideWithRotation( firstPiece, RIGHT, firstRotation );
-        for ( uint j = 0; j < 36; ++j ) {
-            const uint secondIndex = j / 4; 
-            if ( firstIndex == secondIndex ) {
-                continue;
-            }
+        for ( uint j = 0; j < validNeighborsCount[firstIndex] * 4; ++j ) {
+            const uint secondIndex = validNeighbors[firstIndex][j/4];
+            //if ( firstIndex == secondIndex ) {
+            //    continue;
+            //}
             const uint secondRotation = j % 4;
             const Piece secondPiece = puzzle->pieces[centerIndexes[secondIndex]];
-            if ( secondRotation == 0 && !piece_contains( secondPiece, firstRight ) ) {
-                j += 3;
-                continue;
-            }
+            //if ( secondRotation == 0 && !piece_contains( secondPiece, firstRight ) ) {
+            //    j += 3;
+            //    continue;
+            //}
             const char secondLeft = piece_getSideWithRotation( secondPiece, LEFT, secondRotation );
             if ( !piece_piecesConnect( firstRight, secondLeft ) ) {
                 continue;
             }
             const char secondRight = piece_getSideWithRotation( secondPiece, RIGHT, secondRotation );
-            for ( uint k = 0; k < 36; ++k ) {
-                const uint thirdIndex = k / 4; 
-                if ( thirdIndex == secondIndex || thirdIndex == firstIndex ) {
+            for ( uint k = 0; k < validNeighborsCount[secondIndex] * 4; ++k ) {
+                const uint thirdIndex = validNeighbors[secondIndex][k/4];
+                if ( thirdIndex == firstIndex ) {
                     continue;
                 }
                 const uint thirdRotation = k % 4;
                 const Piece thirdPiece = puzzle->pieces[centerIndexes[thirdIndex]];
-                if ( thirdRotation == 0 && !piece_contains( thirdPiece, secondRight ) ) {
-                    k += 3;
-                    continue;
-                }
+                //if ( thirdRotation == 0 && !piece_contains( thirdPiece, secondRight ) ) {
+                //    k += 3;
+                //    continue;
+                //}
                 const char thirdLeft = piece_getSideWithRotation( thirdPiece, LEFT, thirdRotation );
 
                 if ( !piece_piecesConnect( secondRight, thirdLeft ) ){
@@ -714,6 +716,7 @@ void puzzle_findValidEdges( const Puzzle* const puzzle, DynamicArray* const edge
 
 void findValidCentersForEdge( const Puzzle* const puzzle, const EdgeSolution* edgeSolution,
                               DynamicArray* centerSolutions ) {
+    static const uint centerIndex[9] = { 6, 7, 8, 11, 12, 13, 16, 17, 18 };
     static bool allocatedCenters = false;
     static DynamicArray* validCenterRows;
     if ( !allocatedCenters ) {
@@ -721,7 +724,23 @@ void findValidCentersForEdge( const Puzzle* const puzzle, const EdgeSolution* ed
         allocatedCenters = true;
     }
     validCenterRows->numElements = 0;
-    puzzle_calculateValidCenterRows( puzzle, edgeSolution, validCenterRows );
+    uint validNeighbors[9][9];
+    uint validNeighborsCount[9];
+    memset( validNeighborsCount, 0, sizeof( uint ) * 9 );
+    for ( uint i = 0; i < 9; ++i ) {
+        for ( uint j = 0; j < 9; ++j ) {
+            if ( i == j ) {
+                continue;
+            }
+            if ( piece_canBeNeighbors( puzzle->pieces[centerIndex[i]], puzzle->pieces[centerIndex[j]] ) ){
+                validNeighbors[i][validNeighborsCount[i]] = j;
+                ++validNeighborsCount[i];
+            }
+        }
+    }
+
+    puzzle_calculateValidCenterRows( puzzle, edgeSolution, validCenterRows,
+                                     validNeighbors, validNeighborsCount );
     uint centerIndexes[3];
     puzzle_recCenterSolve( puzzle, centerIndexes, edgeSolution, validCenterRows,
                            0, centerSolutions );

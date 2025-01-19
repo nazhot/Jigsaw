@@ -25,6 +25,10 @@ __inline__ bool piece_contains( const Piece piece, const char side ) {
     return piece.bitfield >> side & 1;
 }
 
+__inline__ bool piece_canBeNeighbors( const Piece piece1, const Piece piece2 ) {
+    return piece1.bitfield & piece2.bitfield;
+}
+
 __inline__ char piece_getSide( const Piece piece, const SideDirection side ) {
     return piece.sides[side];
 }
