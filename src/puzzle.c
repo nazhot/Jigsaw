@@ -271,6 +271,7 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                                             const EdgeSolution* edgeSolution,
                                             DynamicArray* const validCenterRows ) {
     static const uint centerIndexes[9] = { 6, 7, 8, 11, 12, 13, 16, 17, 18 };
+
     //Right/Left refer to Right/Left of edge pieces
     char validLefts[3] = {0};
     char validRights[3] = {0};
@@ -327,9 +328,21 @@ static void puzzle_calculateValidCenterRows( const Puzzle* const puzzle,
                     continue;
                 }
                 const char thirdRight = piece_getSideWithRotation( thirdPiece, RIGHT, thirdRotation );
-                if ( !charArrayContains( validRights, 3, thirdRight ) ) {
+                //make sure that the two edges line up with each other
+                //left and right go bottom -> top and top -> bottom respectively, hence the 2 - l
+                bool valid = false;
+                for ( uint l = 0; l < 3; ++l ) {
+                    if ( piece_piecesConnect( firstLeft,validLefts[l] ) &&
+                         piece_piecesConnect( thirdRight, validRights[2 - l] ) ) {
+                        valid = true;
+                        break;
+                    }
+                }
+
+                if ( !valid) { // !charArrayContains( validRights, 3, thirdRight ) ) {
                     continue;
                 }
+
                 TripleIndex tempValidCenterRow;
 
                 tempValidCenterRow.indexes[0] = firstPiece.index;
